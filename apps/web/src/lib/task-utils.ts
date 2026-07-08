@@ -57,6 +57,10 @@ export function normalizePriority(value?: string | null): TaskPriority {
   return "MEDIUM";
 }
 
+export function isAdmin(role?: string | null) {
+  return role === "ADMIN";
+}
+
 export function canManageTasks(role?: string | null) {
   return role === "ADMIN" || role === "CLIENT_MANAGER";
 }

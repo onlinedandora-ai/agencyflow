@@ -372,6 +372,7 @@ export type TeamMember = {
   name: string;
   email: string;
   role: string;
+  createdAt?: string;
 };
 
 export type TaskDetail = TaskItem & {
@@ -645,6 +646,11 @@ export const api = {
     apiFetch<ProjectBoard>(`/projects/${projectId}/board`, {}, token),
   getTask: (token: string, taskId: string) => apiFetch<TaskDetail>(`/projects/tasks/${taskId}`, {}, token),
   getAssignableTeam: (token: string) => apiFetch<TeamMember[]>("/users/assignable", {}, token),
+  getUsers: (token: string) => apiFetch<TeamMember[]>("/users", {}, token),
+  createUser: (
+    token: string,
+    data: { name: string; email: string; password: string; role: string },
+  ) => apiFetch<TeamMember>("/users", { method: "POST", body: JSON.stringify(data) }, token),
   createTask: (
     token: string,
     projectId: string,

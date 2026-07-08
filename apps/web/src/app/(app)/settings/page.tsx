@@ -2,10 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Cog, Play, Server } from "lucide-react";
+import { Cog, Play, Server, Users } from "lucide-react";
+import Link from "next/link";
 import { api, type WorkflowSettings } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { canManageTasks } from "@/lib/task-utils";
+import { canManageTasks, isAdmin } from "@/lib/task-utils";
 import { Button } from "@/components/ui/button";
 
 const JOB_LABELS: Record<string, string> = {
@@ -19,6 +20,7 @@ export default function SettingsPage() {
   const token = useAuthStore((s) => s.token)!;
   const user = useAuthStore((s) => s.user);
   const isManager = canManageTasks(user?.role);
+  const admin = isAdmin(user?.role);
   const queryClient = useQueryClient();
 
   const [agency, setAgency] = useState({
@@ -124,6 +126,22 @@ export default function SettingsPage() {
         <h1 className="page-title">Settings</h1>
         <p className="text-sm text-muted-foreground">Agency profile, bank details, and workflow automation</p>
       </div>
+
+      {admin && (
+        <Link
+          href="/settings/team"
+          className="glass-panel flex items-center justify-between p-5 transition hover:bg-white/60"
+        >
+          <div>
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Users className="h-5 w-5" />
+              Team
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">Create users and manage team member roles</p>
+          </div>
+          <span className="text-sm text-primary">Manage →</span>
+        </Link>
+      )}
 
       <div className="glass-panel p-5">
         <h2 className="flex items-center gap-2 font-semibold">
