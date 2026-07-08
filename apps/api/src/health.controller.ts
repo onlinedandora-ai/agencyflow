@@ -14,6 +14,9 @@ export class HealthController {
 
   @Get('health')
   health() {
-    return { status: 'ok' };
+    return {
+      status: 'ok',
+      commit: process.env.RENDER_GIT_COMMIT ?? null,
+    };
   }
 }

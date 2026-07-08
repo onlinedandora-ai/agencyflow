@@ -138,10 +138,34 @@ npm run prisma:seed
 
 ## 6. Verify
 
-- [ ] `GET /health` → `{"status":"ok"}`
+- [ ] `GET /health` → `{"status":"ok","commit":"<git-sha>"}` (commit confirms Render deployed latest `main`)
+- [ ] `GET /leads/archive` with manager token → `[]` or archived leads (not `Lead not found`)
+- [ ] `POST /leads/:id/archive` with manager token → archived lead JSON
 - [ ] Login at Vercel URL with `admin@agencyflow.com` / `demo123`
 - [ ] Pipeline loads leads
 - [ ] Project board loads tasks
+
+### Prisma migrations on Render
+
+The API Docker image runs `npx prisma migrate deploy` before `node dist/src/main.js`. If the Supabase DB was created with `db push` / seed (no `_prisma_migrations` table), the first deploy after that change fails with **P3005** and Render keeps the **previous** container — archive routes will 404 until this is fixed.
+
+**One-time baseline** (from `apps/api` with production `DATABASE_URL` / `DIRECT_URL` in `.env`):
+
+```bash
+npx prisma migrate resolve --applied "20260707162421_init"
+npx prisma migrate resolve --applied "20260708120000_workflow_automation_reports"
+npx prisma migrate resolve --applied "20260708200000_lead_archive"
+npx prisma migrate deploy   # should report "No pending migrations"
+```
+
+Then trigger a Render redeploy (push to `main` or Dashboard → **Manual Deploy**).
+
+### Manual Render redeploy
+
+If `GET /health` commit SHA is behind `main` on GitHub:
+
+1. Render Dashboard → **agencyflow-api** → **Manual Deploy** → Deploy latest commit
+2. Or push any commit to `main` (auto-deploy when `autoDeployTrigger: commit` in `render.yaml`)
 
 ## CLI shortcuts (emergency / local only)
 

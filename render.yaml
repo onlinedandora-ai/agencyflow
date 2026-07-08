@@ -5,6 +5,8 @@ services:
   - type: web
     name: agencyflow-api
     runtime: docker
+    branch: main
+    autoDeployTrigger: commit
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
     plan: free
