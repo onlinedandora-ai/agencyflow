@@ -1,0 +1,22 @@
+# Render — AgencyFlow API only (deploy web on Vercel)
+# https://dashboard.render.com/blueprints
+
+services:
+  - type: web
+    name: agencyflow-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEB_ORIGIN
+        sync: false
+      - key: PORT
+        value: "3001"

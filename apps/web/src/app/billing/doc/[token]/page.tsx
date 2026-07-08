@@ -4,6 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { InvoiceDocument } from "@/components/invoice-document";
+import {
+  PublicErrorState,
+  PublicLoadingState,
+  PublicPageLayout,
+} from "@/components/public-page-layout";
 import { api } from "@/lib/api";
 
 export default function BillingDocumentPage() {
@@ -24,26 +29,18 @@ export default function BillingDocumentPage() {
   }, [shouldPrint, data]);
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-[var(--color-muted)]">Loading document...</p>
-      </div>
-    );
+    return <PublicLoadingState message="Loading document..." />;
   }
 
   if (error || !data) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-[var(--color-danger)]">Document not found.</p>
-      </div>
-    );
+    return <PublicErrorState message="Document not found." />;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] py-10 print:bg-white print:py-0">
-      <div className="mx-auto max-w-[800px] px-4 print:max-w-none print:px-0">
+    <PublicPageLayout>
+      <div className="print:max-w-none print:px-0">
         <InvoiceDocument invoice={data.invoice} agency={data.agency} />
       </div>
-    </div>
+    </PublicPageLayout>
   );
 }

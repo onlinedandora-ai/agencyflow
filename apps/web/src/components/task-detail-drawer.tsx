@@ -1,28 +1,38 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertCircle,
-  Calendar,
-  Clock,
-  Pencil,
-  Save,
-  User,
-  X,
-} from "lucide-react";
+import { AlertCircle, Calendar, Clock, Pencil, Save, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { api, cn, type TaskItem, type TeamMember } from "@/lib/api";
+import { TaskSlaTimer } from "@/components/task-sla-timer";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { api, type TaskItem } from "@/lib/api";
 import {
   canManageTasks,
   formatDueCountdown,
   isOverdue,
   normalizePriority,
   PRIORITY_LABELS,
-  PRIORITY_STYLES,
   ROLE_LABELS,
+  sopDeadlinePreview,
   TASK_PRIORITIES,
+  TASK_SLA_HOURS,
   type TaskPriority,
 } from "@/lib/task-utils";
+import { cn } from "@/lib/utils";
 
 export type TaskFormData = {
   title: string;
@@ -148,17 +158,12 @@ export function TaskDetailDrawer({
     onError: (err: Error) => setError(err.message),
   });
 
-  if (!open) return null;
-
   const displayTask = taskDetail || task;
   const priority = normalizePriority(displayTask?.priority);
-  const priorityStyle = PRIORITY_STYLES[priority];
   const overdue = isOverdue(displayTask?.dueDate, displayTask?.boardColumn, doneColumnKey);
   const dueLabel = formatDueCountdown(displayTask?.dueDate);
   const columnLabel =
-    taskDetail?.columnLabel ||
-    displayTask?.boardColumn?.replace(/_/g, " ") ||
-    "—";
+    taskDetail?.columnLabel || displayTask?.boardColumn?.replace(/_/g, " ") || "—";
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -167,71 +172,73 @@ export function TaskDetailDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <button type="button" className="absolute inset-0 bg-black/30" onClick={onClose} aria-label="Close" />
-      <aside className="relative flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-[var(--color-border)] px-5 py-4">
-          <div className="min-w-0 flex-1 pr-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-              {mode === "create" ? "New task" : "Task details"}
-            </p>
-            {mode === "view" && displayTask && (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", priorityStyle.badge)}>
-                  {PRIORITY_LABELS[priority]}
-                </span>
-                <span className="rounded-full bg-[var(--color-bg)] px-2 py-0.5 text-xs capitalize text-[var(--color-muted)]">
-                  {columnLabel}
-                </span>
-                {overdue && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700">
-                    <AlertCircle className="h-3 w-3" />
-                    Overdue
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          <button type="button" onClick={onClose} className="text-[var(--color-muted)] hover:text-[var(--color-primary)]">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+        <SheetHeader className="border-b px-5 py-4">
+          <SheetTitle>{mode === "create" ? "New task" : "Task details"}</SheetTitle>
+          {mode === "view" && displayTask && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Badge variant="secondary">{PRIORITY_LABELS[priority]}</Badge>
+              <Badge variant="outline" className="capitalize">
+                {columnLabel}
+              </Badge>
+              {displayTask?.sla?.breached && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  SLA breach
+                </Badge>
+              )}
+              {overdue && !displayTask?.sla?.breached && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Overdue
+                </Badge>
+              )}
+            </div>
+          )}
+        </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {error && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {error}
-            </div>
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           {editing && canEdit ? (
             <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
-              <Field label="Title" required>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="task-title">
+                  Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="task-title"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
                   placeholder="What needs to be delivered?"
                   required
                 />
-              </Field>
+              </div>
 
-              <Field label="Brief / definition of done">
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="task-description">Brief / definition of done</Label>
+                <Textarea
+                  id="task-description"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={4}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
                   placeholder="Scope, acceptance criteria, references..."
                 />
-              </Field>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Urgency" required>
+                <div className="space-y-2">
+                  <Label htmlFor="task-priority">Urgency</Label>
                   <select
+                    id="task-priority"
                     value={form.priority}
                     onChange={(e) => setForm({ ...form, priority: e.target.value as TaskPriority })}
-                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
                   >
                     {TASK_PRIORITIES.map((p) => (
                       <option key={p} value={p}>
@@ -239,23 +246,37 @@ export function TaskDetailDrawer({
                       </option>
                     ))}
                   </select>
-                </Field>
-
-                <Field label="Due date">
-                  <input
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="task-due">Due date</Label>
+                  <Input
+                    id="task-due"
                     type="date"
                     value={form.dueDate}
                     onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                    className="w-full rounded-lg border px-3 py-2 text-sm"
                   />
-                </Field>
+                </div>
               </div>
 
-              <Field label="Assign to">
+              {mode === "create" && !form.dueDate && (
+                <p className="rounded-lg border border-indigo-200/50 bg-indigo-50/40 px-3 py-2 text-xs text-muted-foreground">
+                  SOP timer: auto due in <strong>{TASK_SLA_HOURS[form.priority]} hours</strong> for{" "}
+                  {PRIORITY_LABELS[form.priority].toLowerCase()} priority (
+                  {sopDeadlinePreview(form.priority).deadline.toLocaleString("en-IN", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                  ). Override with a custom due date above.
+                </p>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="task-assignee">Assign to</Label>
                 <select
+                  id="task-assignee"
                   value={form.assigneeId}
                   onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
                 >
                   <option value="">Unassigned</option>
                   {team.map((member) => (
@@ -264,28 +285,33 @@ export function TaskDetailDrawer({
                     </option>
                   ))}
                 </select>
-              </Field>
+              </div>
 
               {Object.keys(customFieldLabels).length > 0 && (
-                <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                    Delivery fields
-                  </p>
-                  {Object.entries(customFieldLabels).map(([key, label]) => (
-                    <Field key={key} label={label}>
-                      <input
-                        value={form.customFields[key] || ""}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            customFields: { ...form.customFields, [key]: e.target.value },
-                          })
-                        }
-                        className="w-full rounded-lg border bg-white px-3 py-2 text-sm"
-                      />
-                    </Field>
-                  ))}
-                </div>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Delivery fields
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {Object.entries(customFieldLabels).map(([key, label]) => (
+                      <div key={key} className="space-y-2">
+                        <Label htmlFor={`field-${key}`}>{label}</Label>
+                        <Input
+                          id={`field-${key}`}
+                          value={form.customFields[key] || ""}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              customFields: { ...form.customFields, [key]: e.target.value },
+                            })
+                          }
+                        />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
               )}
             </form>
           ) : (
@@ -294,44 +320,77 @@ export function TaskDetailDrawer({
                 <div>
                   <h2 className="text-xl font-semibold leading-snug">{displayTask.title}</h2>
                   {displayTask.description ? (
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--color-muted)]">
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                       {displayTask.description}
                     </p>
                   ) : (
-                    <p className="mt-3 text-sm italic text-[var(--color-muted)]">No brief added yet.</p>
+                    <p className="mt-3 text-sm italic text-muted-foreground">No brief added yet.</p>
                   )}
                 </div>
 
-                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                    Allocated to
-                  </p>
-                  {displayTask.assignee ? (
-                    <div className="mt-3 flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-[var(--color-primary)]">
-                        {displayTask.assignee.name
-                          .split(" ")
-                          .map((part) => part[0])
-                          .join("")
-                          .slice(0, 2)}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Allocated to
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {displayTask.assignee ? (
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {displayTask.assignee.name
+                              .split(" ")
+                              .map((part) => part[0])
+                              .join("")
+                              .slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{displayTask.assignee.name}</p>
+                          <p className="text-sm text-muted-foreground">{displayTask.assignee.email}</p>
+                          {"role" in displayTask.assignee && displayTask.assignee.role && (
+                            <p className="text-xs text-primary">
+                              {ROLE_LABELS[displayTask.assignee.role as string] || displayTask.assignee.role}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{displayTask.assignee.name}</p>
-                        <p className="text-sm text-[var(--color-muted)]">{displayTask.assignee.email}</p>
-                        {"role" in displayTask.assignee && displayTask.assignee.role && (
-                          <p className="text-xs text-[var(--color-primary)]">
-                            {ROLE_LABELS[displayTask.assignee.role as string] || displayTask.assignee.role}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-2 flex items-center gap-2 text-sm text-[var(--color-muted)]">
-                      <User className="h-4 w-4" />
-                      Not assigned yet
-                    </p>
-                  )}
-                </div>
+                    ) : (
+                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-4 w-4" />
+                        Not assigned yet
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {displayTask.sla && (
+                  <Card
+                    className={cn(
+                      displayTask.sla.breached && "border-destructive/30 bg-destructive/5",
+                      displayTask.sla.atRisk && !displayTask.sla.breached && "border-amber-200/60 bg-amber-50/40",
+                    )}
+                  >
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">
+                        SOP delivery timer
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <TaskSlaTimer sla={displayTask.sla} />
+                      {displayTask.dueDate && (
+                        <p className="text-xs text-muted-foreground">
+                          Deadline:{" "}
+                          {new Date(displayTask.dueDate).toLocaleString("en-IN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <InfoCard icon={AlertCircle} label="Urgency" value={PRIORITY_LABELS[priority]} />
@@ -344,19 +403,19 @@ export function TaskDetailDrawer({
                 </div>
 
                 {displayTask.revisionRound > 0 && (
-                  <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                    Revision round {displayTask.revisionRound}
-                  </p>
+                  <Alert>
+                    <AlertDescription>Revision round {displayTask.revisionRound}</AlertDescription>
+                  </Alert>
                 )}
 
                 {displayTask.customFields && Object.keys(displayTask.customFields).length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Delivery details
                     </p>
                     {Object.entries(displayTask.customFields).map(([key, value]) => (
                       <div key={key} className="flex justify-between gap-4 text-sm">
-                        <span className="text-[var(--color-muted)]">{customFieldLabels[key] || key}</span>
+                        <span className="text-muted-foreground">{customFieldLabels[key] || key}</span>
                         <span className="text-right font-medium">{value}</span>
                       </div>
                     ))}
@@ -364,7 +423,7 @@ export function TaskDetailDrawer({
                 )}
 
                 {displayTask.createdAt && (
-                  <div className="flex items-center gap-2 border-t pt-4 text-xs text-[var(--color-muted)]">
+                  <div className="flex items-center gap-2 border-t pt-4 text-xs text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" />
                     Created {new Date(displayTask.createdAt).toLocaleDateString()}
                     {displayTask.updatedAt && displayTask.updatedAt !== displayTask.createdAt && (
@@ -377,23 +436,19 @@ export function TaskDetailDrawer({
           )}
         </div>
 
-        <div className="border-t border-[var(--color-border)] px-5 py-4">
+        <SheetFooter className="border-t px-5 py-4">
           {editing && canEdit ? (
-            <div className="flex gap-2">
+            <div className="flex w-full gap-2">
               {mode === "view" && (
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  className="flex-1 rounded-lg border px-4 py-2 text-sm font-medium"
-                >
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setEditing(false)}>
                   Cancel
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="submit"
                 form="task-form"
+                className="flex-1"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white"
               >
                 <Save className="h-4 w-4" />
                 {createMutation.isPending || updateMutation.isPending
@@ -401,45 +456,21 @@ export function TaskDetailDrawer({
                   : mode === "create"
                     ? "Create task"
                     : "Save changes"}
-              </button>
+              </Button>
             </div>
           ) : canEdit && mode === "view" ? (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary)]"
-            >
+            <Button type="button" variant="outline" className="w-full" onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" />
               Edit task
-            </button>
+            </Button>
           ) : (
-            <p className="text-center text-xs text-[var(--color-muted)]">
+            <p className="w-full text-center text-xs text-muted-foreground">
               Only managers can create or edit tasks. Drag cards to update status.
             </p>
           )}
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-[var(--color-muted)]">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </span>
-      {children}
-    </label>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -455,17 +486,14 @@ function InfoCard({
   highlight?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border p-3",
-        highlight ? "border-red-200 bg-red-50" : "border-[var(--color-border)] bg-white",
-      )}
-    >
-      <div className="flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
-      <p className={cn("mt-1 text-sm font-medium", highlight && "text-red-800")}>{value}</p>
-    </div>
+    <Card className={cn(highlight && "border-destructive/30 bg-destructive/5")}>
+      <CardContent className="p-3">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" />
+          {label}
+        </div>
+        <p className={cn("mt-1 text-sm font-medium", highlight && "text-destructive")}>{value}</p>
+      </CardContent>
+    </Card>
   );
 }

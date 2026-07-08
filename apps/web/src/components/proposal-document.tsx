@@ -53,28 +53,28 @@ export function ProposalDocument({
         <div className="flex items-start justify-between gap-8">
           <div>
             <p className="text-2xl font-semibold tracking-tight">{agency.name}</p>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">{agency.tagline}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{agency.tagline}</p>
           </div>
           <div className="text-right text-sm">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-primary)]">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Proposal
             </p>
             <p className="mt-2 font-mono text-base font-semibold">
               {proposal.proposalNumber || "DRAFT"}
               {(proposal.currentVersion ?? 0) > 0 && (
-                <span className="ml-2 text-sm font-normal text-[var(--color-muted)]">
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
                   v{proposal.currentVersion}
                 </span>
               )}
             </p>
-            <p className="mt-1 text-[var(--color-muted)]">Issued {formattedDate}</p>
+            <p className="mt-1 text-muted-foreground">Issued {formattedDate}</p>
             {proposal.sentAt && !isAccepted && (
-              <span className="mt-2 inline-block rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-[var(--color-primary)]">
+              <span className="mt-2 inline-block rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-primary">
                 Awaiting acceptance
               </span>
             )}
             {isAccepted && (
-              <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-[var(--color-success)]">
+              <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-600">
                 <CheckCircle2 className="h-3 w-3" />
                 Accepted
               </span>
@@ -85,12 +85,12 @@ export function ProposalDocument({
         {/* Client + Agency details */}
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Prepared for
             </p>
             <p className="mt-3 text-lg font-semibold">{lead?.name || "Client"}</p>
             {lead?.company && <p className="mt-1 text-sm font-medium">{lead.company}</p>}
-            <div className="mt-4 space-y-1.5 text-sm text-[var(--color-muted)]">
+            <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
               {lead?.email && (
                 <p className="flex items-center gap-2">
                   <Mail className="h-3.5 w-3.5 shrink-0" />
@@ -107,11 +107,11 @@ export function ProposalDocument({
           </div>
 
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Prepared by
             </p>
             <p className="mt-3 text-lg font-semibold">{agency.name}</p>
-            <div className="mt-4 space-y-1.5 text-sm text-[var(--color-muted)]">
+            <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
               {agency.address && (
                 <p className="flex items-start gap-2">
                   <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -152,12 +152,12 @@ export function ProposalDocument({
               className={index > 0 ? "mt-12 border-t border-[var(--color-border)] pt-12" : ""}
             >
               <div className="flex items-baseline gap-4">
-                <span className="font-mono text-sm font-semibold text-[var(--color-primary)]">
+                <span className="font-mono text-sm font-semibold text-primary">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div>
                   <h2 className="text-xl font-semibold">{section.label}</h2>
-                  <p className="text-sm text-[var(--color-muted)]">{section.subtitle}</p>
+                  <p className="text-sm text-muted-foreground">{section.subtitle}</p>
                 </div>
               </div>
               <div className="proposal-section-body mt-5 whitespace-pre-wrap pl-9 text-[15px] leading-8 text-[var(--color-ink)]">
@@ -165,7 +165,7 @@ export function ProposalDocument({
                   <ul className="space-y-2">
                     {value.split("\n").filter(Boolean).map((line, i) => (
                       <li key={i} className="flex gap-2">
-                        <span className="text-[var(--color-primary)]">•</span>
+                        <span className="text-primary">•</span>
                         <span>{line.replace(/^[•\-]\s*/, "")}</span>
                       </li>
                     ))}
@@ -185,15 +185,15 @@ export function ProposalDocument({
         {caseStudy && (
           <section className="mt-12 border-t border-[var(--color-border)] pt-12">
             <h2 className="text-xl font-semibold">Relevant work</h2>
-            <p className="text-sm text-[var(--color-muted)]">A similar project from our portfolio</p>
+            <p className="text-sm text-muted-foreground">A similar project from our portfolio</p>
             <div className="mt-5 rounded-xl border border-[var(--color-border)] p-6">
               <p className="font-semibold">{caseStudy.title}</p>
-              <p className="mt-1 text-sm text-[var(--color-muted)]">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {caseStudy.clientName} · {caseStudy.serviceLine}
               </p>
               <p className="mt-3 text-sm leading-7">{caseStudy.summary}</p>
               {caseStudy.outcome && (
-                <p className="mt-3 text-sm font-medium text-[var(--color-success)]">
+                <p className="mt-3 text-sm font-medium text-green-600">
                   Result: {caseStudy.outcome}
                 </p>
               )}
@@ -204,8 +204,8 @@ export function ProposalDocument({
         {proposal.termsAndConditions && (
           <section className="proposal-page-break mt-12 border-t border-[var(--color-border)] pt-12">
             <h2 className="text-xl font-semibold">Terms &amp; Conditions</h2>
-            <p className="text-sm text-[var(--color-muted)]">Standard commercial terms for this engagement</p>
-            <div className="mt-5 whitespace-pre-wrap rounded-xl bg-[var(--color-bg)] p-6 text-sm leading-7 text-[var(--color-muted)]">
+            <p className="text-sm text-muted-foreground">Standard commercial terms for this engagement</p>
+            <div className="mt-5 whitespace-pre-wrap rounded-xl bg-[var(--color-bg)] p-6 text-sm leading-7 text-muted-foreground">
               {proposal.termsAndConditions}
             </div>
           </section>
@@ -214,7 +214,7 @@ export function ProposalDocument({
         {agency.bankName && (
           <section className="mt-12 border-t border-[var(--color-border)] pt-12">
             <h2 className="text-lg font-semibold">Payment details</h2>
-            <div className="mt-4 grid gap-2 font-mono text-sm text-[var(--color-muted)]">
+            <div className="mt-4 grid gap-2 font-mono text-sm text-muted-foreground">
               <p>Bank: {agency.bankName}</p>
               <p>Account: {agency.bankAccount}</p>
               <p>IFSC: {agency.bankIfsc}</p>
@@ -227,16 +227,16 @@ export function ProposalDocument({
       <footer className="border-t border-[var(--color-border)] bg-[var(--color-bg)] px-10 py-10">
         {isAccepted ? (
           <div className="rounded-xl border border-green-200 bg-green-50 p-6">
-            <p className="flex items-center gap-2 font-semibold text-[var(--color-success)]">
+            <p className="flex items-center gap-2 font-semibold text-green-600">
               <CheckCircle2 className="h-5 w-5" />
               Proposal accepted
             </p>
-            <p className="mt-2 text-sm text-[var(--color-muted)]">
+            <p className="mt-2 text-sm text-muted-foreground">
               Signed by <strong>{proposal.acceptedByName}</strong> ({proposal.acceptedByEmail})
               {proposal.acceptedAt &&
                 ` on ${new Date(proposal.acceptedAt).toLocaleString("en-IN")}`}
             </p>
-            <p className="mt-3 text-sm text-[var(--color-muted)]">
+            <p className="mt-3 text-sm text-muted-foreground">
               Advance invoice has been raised. Work begins once payment is confirmed.
             </p>
           </div>
@@ -245,7 +245,7 @@ export function ProposalDocument({
             {revisionPending ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
                 <p className="font-semibold text-amber-900">Revision request received</p>
-                <p className="mt-2 text-sm text-[var(--color-muted)]">
+                <p className="mt-2 text-sm text-muted-foreground">
                   We&apos;re working on your requested changes and will send an updated proposal link
                   shortly.
                 </p>
@@ -254,7 +254,7 @@ export function ProposalDocument({
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-lg font-semibold">Ready to proceed?</p>
-                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     By accepting, you agree to the scope, investment, and terms above. We&apos;ll send
                     your advance invoice and onboarding pack immediately.
                   </p>
@@ -282,12 +282,12 @@ export function ProposalDocument({
             )}
           </div>
         ) : (
-          <p className="text-center text-sm text-[var(--color-muted)]">
+          <p className="text-center text-sm text-muted-foreground">
             Share the client link after sending so the client can review and accept online.
           </p>
         )}
 
-        <p className="mt-8 text-center text-xs text-[var(--color-muted)]">
+        <p className="mt-8 text-center text-xs text-muted-foreground">
           {agency.name}
           {agency.gstin ? ` · GSTIN ${agency.gstin}` : ""} · {agency.email}
         </p>

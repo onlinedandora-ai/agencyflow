@@ -7,6 +7,7 @@ import {
   SERVICE_LINE_TEMPLATES,
 } from '../common/service-line-templates';
 import { normalizePriority } from '../common/task-priorities';
+import { computeSlaDeadline, computeTaskSla } from '../common/task-sla';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTaskDto, MoveTaskDto, UpdateTaskDto } from './dto/task.dto';
 
@@ -27,35 +28,49 @@ export class ProjectsService {
     invoices: true,
   };
 
-  private formatTask(task: {
-    id: string;
-    title: string;
-    description: string | null;
-    status: string;
-    boardColumn: string;
-    sortOrder: number;
-    priority: string | null;
-    dueDate: Date | null;
-    revisionRound: number;
-    isBlockedByGate: boolean;
-    gateReason: string | null;
-    customFields: unknown;
-    createdAt: Date;
-    updatedAt: Date;
-    assignee?: { id: string; name: string; email: string; role?: string } | null;
-  }) {
+  private formatTask(
+    task: {
+      id: string;
+      title: string;
+      description: string | null;
+      status: string;
+      boardColumn: string;
+      sortOrder: number;
+      priority: string | null;
+      dueDate: Date | null;
+      revisionRound: number;
+      isBlockedByGate: boolean;
+      gateReason: string | null;
+      customFields: unknown;
+      createdAt: Date;
+      updatedAt: Date;
+      assignee?: { id: string; name: string; email: string; role?: string } | null;
+    },
+    serviceLine?: string,
+  ) {
+    const template = serviceLine ? getServiceLineTemplate(serviceLine) : null;
+    const doneColumnKey = template?.columns[template.columns.length - 1]?.key;
+    const sla = computeTaskSla(task, doneColumnKey);
+
     return {
       ...task,
       priority: normalizePriority(task.priority),
       customFields: (task.customFields as Record<string, string> | null) ?? null,
-      dueDate: task.dueDate?.toISOString() ?? null,
+      dueDate: task.dueDate?.toISOString() ?? sla.deadline,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
+      sla,
     };
   }
 
   private computeProjectStats(
-    tasks: Array<{ boardColumn: string; dueDate: Date | null; status: string; priority?: string | null }>,
+    tasks: Array<{
+      boardColumn: string;
+      dueDate: Date | null;
+      status: string;
+      priority?: string | null;
+      createdAt?: Date;
+    }>,
     serviceLine: string,
   ) {
     const template = getServiceLineTemplate(serviceLine);
@@ -68,13 +83,26 @@ export class ProjectsService {
         task.boardColumn !== doneColumn &&
         task.status !== 'APPROVED',
     ).length;
+    const slaBreaches = tasks.filter((task) => {
+      const sla = computeTaskSla(
+        {
+          priority: task.priority ?? 'MEDIUM',
+          dueDate: task.dueDate,
+          createdAt: task.createdAt ?? now,
+          boardColumn: task.boardColumn,
+          status: task.status,
+        },
+        doneColumn,
+      );
+      return sla.breached;
+    }).length;
     const completedCount = tasks.filter((task) => task.boardColumn === doneColumn).length;
     const urgentCount = tasks.filter((task) => normalizePriority(task.priority as string) === 'URGENT').length;
     const progressPercent = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
     const health =
       overdueCount > 0 || urgentCount > 2 ? 'red' : urgentCount > 0 || progressPercent < 40 ? 'yellow' : 'green';
 
-    return { overdueCount, completedCount, urgentCount, progressPercent, health };
+    return { overdueCount, slaBreaches, completedCount, urgentCount, progressPercent, health };
   }
 
   getTemplates() {
@@ -92,6 +120,7 @@ export class ProjectsService {
             status: true,
             dueDate: true,
             priority: true,
+            createdAt: true,
             assigneeId: true,
             assignee: { select: { id: true, name: true } },
           },
@@ -142,7 +171,7 @@ export class ProjectsService {
       gateMessage: isGateLocked
         ? 'Advance payment required before tasks can move beyond the first column'
         : null,
-      tasks: project.tasks.map((task) => this.formatTask(task)),
+      tasks: project.tasks.map((task) => this.formatTask(task, serviceLine)),
     };
   }
 
@@ -165,7 +194,7 @@ export class ProjectsService {
     const column = template.columns.find((col) => col.key === task.boardColumn);
 
     return {
-      ...this.formatTask(task),
+      ...this.formatTask(task, serviceLine),
       columnLabel: column?.label ?? task.boardColumn,
       project: {
         id: task.project.id,
@@ -196,6 +225,7 @@ export class ProjectsService {
         dueDate: task.dueDate ? new Date(task.dueDate) : null,
         status: task.status,
         priority: task.priority,
+        createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
       })),
       project.serviceLine,
     );
@@ -254,13 +284,16 @@ export class ProjectsService {
       _max: { sortOrder: true },
     });
 
+    const priority = normalizePriority(dto.priority);
+    const now = new Date();
+
     const task = await this.prisma.task.create({
       data: {
         projectId,
         title: dto.title,
         description: dto.description,
-        priority: normalizePriority(dto.priority),
-        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        priority,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : computeSlaDeadline(priority, now),
         assigneeId: dto.assigneeId,
         customFields: dto.customFields,
         boardColumn: firstColumn,
@@ -275,12 +308,17 @@ export class ProjectsService {
       include: this.taskInclude,
     });
 
-    return this.formatTask(task);
+    return this.formatTask(task, serviceLine);
   }
 
   async updateTask(taskId: string, dto: UpdateTaskDto) {
-    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
-    if (!task) throw new NotFoundException('Task not found');
+    const existing = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: { project: { include: { workspace: true } } },
+    });
+    if (!existing) throw new NotFoundException('Task not found');
+
+    const serviceLine = existing.project.workspace.serviceLine || 'Content Creation';
 
     const updated = await this.prisma.task.update({
       where: { id: taskId },
@@ -295,7 +333,7 @@ export class ProjectsService {
       include: this.taskInclude,
     });
 
-    return this.formatTask(updated);
+    return this.formatTask(updated, serviceLine);
   }
 
   async moveTask(taskId: string, dto: MoveTaskDto) {
@@ -329,6 +367,7 @@ export class ProjectsService {
         },
         include: this.taskInclude,
       }),
+      serviceLine,
     );
   }
 }

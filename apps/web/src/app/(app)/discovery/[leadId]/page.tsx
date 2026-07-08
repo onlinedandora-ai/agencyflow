@@ -42,24 +42,24 @@ export default function DiscoveryPage() {
     },
   });
 
-  if (isLoading) return <p className="text-sm text-[var(--color-muted)]">Loading...</p>;
+  if (isLoading) return <p className="text-sm text-muted-foreground">Loading...</p>;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/pipeline" className="text-[var(--color-muted)] hover:text-[var(--color-primary)]">
+        <Link href="/pipeline" className="text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold">Discovery Call — {discovery?.lead?.name}</h1>
-          <p className="text-sm text-[var(--color-muted)]">10-question structured discovery sheet (SOP-02)</p>
+          <p className="text-sm text-muted-foreground">10-question structured discovery sheet (SOP-02)</p>
         </div>
-        <Link href={`/proposals/${leadId}`} className="text-sm text-[var(--color-primary)]">
+        <Link href={`/proposals/${leadId}`} className="text-sm text-primary">
           Build proposal →
         </Link>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className="glass-panel p-4">
         <label className="mb-2 block text-sm font-medium">Pre-call research notes</label>
         <textarea
           value={researchNotes}
@@ -71,7 +71,7 @@ export default function DiscoveryPage() {
 
       <div className="space-y-4">
         {DISCOVERY_QUESTIONS.map((question, i) => (
-          <div key={i} className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+          <div key={i} className="glass-panel p-4">
             <label className="mb-2 block text-sm font-medium">
               {i + 1}. {question}
             </label>
@@ -85,7 +85,7 @@ export default function DiscoveryPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className="glass-panel p-4">
         <label className="mb-2 block text-sm font-medium">Call notes</label>
         <textarea
           value={callNotes}

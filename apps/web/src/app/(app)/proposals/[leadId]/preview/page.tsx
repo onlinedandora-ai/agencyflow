@@ -36,7 +36,7 @@ export default function ProposalPreviewPage() {
   });
 
   if (isLoading || !proposal || !agency) {
-    return <p className="text-sm text-[var(--color-muted)]">Loading preview...</p>;
+    return <p className="text-sm text-muted-foreground">Loading preview...</p>;
   }
 
   const hasContent = [
@@ -56,12 +56,12 @@ export default function ProposalPreviewPage() {
     <div className="space-y-6">
       <div className="no-print mx-auto flex max-w-[800px] flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href={`/proposals/${leadId}`} className="text-[var(--color-muted)] hover:text-[var(--color-primary)]">
+          <Link href={`/proposals/${leadId}`} className="text-muted-foreground hover:text-primary">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
             <h1 className="text-xl font-semibold">Final Proposal</h1>
-            <p className="text-sm text-[var(--color-muted)]">
+            <p className="text-sm text-muted-foreground">
               {proposal.proposalNumber || "Draft"} · Client-facing document
             </p>
           </div>
@@ -69,7 +69,7 @@ export default function ProposalPreviewPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/proposals/${leadId}`}
-            className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="glass-panel inline-flex items-center gap-2 px-3 py-2 text-sm"
           >
             <Pencil className="h-4 w-4" />
             Edit
@@ -79,7 +79,7 @@ export default function ProposalPreviewPage() {
               <button
                 type="button"
                 onClick={() => navigator.clipboard.writeText(clientUrl)}
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="glass-panel inline-flex items-center gap-2 px-3 py-2 text-sm"
               >
                 <Copy className="h-4 w-4" />
                 Copy client link
@@ -88,7 +88,7 @@ export default function ProposalPreviewPage() {
                 href={clientUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="glass-panel inline-flex items-center gap-2 px-3 py-2 text-sm"
               >
                 <ExternalLink className="h-4 w-4" />
                 Client view
@@ -111,14 +111,14 @@ export default function ProposalPreviewPage() {
           <strong>Accept flow:</strong> Send the client link above. When they click{" "}
           <strong>Accept Proposal</strong>, acceptance is recorded (name, email, timestamp), the lead
           moves to Closed Won, a client workspace is created, and the advance invoice is raised.
-          Payment is confirmed separately on the <Link href="/clients" className="text-[var(--color-primary)]">Clients</Link> page.
+          Payment is confirmed separately on the <Link href="/clients" className="text-primary">Clients</Link> page.
         </p>
       )}
 
       {!hasContent ? (
-        <div className="no-print mx-auto max-w-[800px] rounded-xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center">
-          <p className="text-sm text-[var(--color-muted)]">This proposal is empty. Fill in the builder first.</p>
-          <Link href={`/proposals/${leadId}`} className="mt-4 inline-block text-sm text-[var(--color-primary)]">
+        <div className="no-print mx-auto max-w-[800px] glass-panel border-dashed p-10 text-center">
+          <p className="text-sm text-muted-foreground">This proposal is empty. Fill in the builder first.</p>
+          <Link href={`/proposals/${leadId}`} className="mt-4 inline-block text-sm text-primary">
             Open proposal builder →
           </Link>
         </div>

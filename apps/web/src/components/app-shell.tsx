@@ -14,8 +14,9 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { cn } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
+import { Button } from "@/components/ui/button";
 
 const mainNavItems = [
   { href: "/pipeline", label: "Pipeline", icon: Users },
@@ -43,20 +44,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="no-print flex w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-ink)] text-white">
+    <div className="mesh-page flex min-h-screen">
+      <aside className="glass-sidebar no-print flex w-64 flex-col">
         <div className="border-b border-white/10 px-6 py-5">
           <div className="text-lg font-semibold tracking-tight">AgencyFlow</div>
-          <p className="mt-1 text-xs text-white/60">by SreeDrisya Media</p>
+          <p className="mt-1 text-xs text-white/55">by SreeDrisya Media</p>
         </div>
         <nav className="flex-1 space-y-1 p-4">
           <div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setSalesOpen((v) => !v)}
               className={cn(
-                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition",
-                salesActive ? "bg-white/15 text-white" : "text-white/70 hover:bg-white/10",
+                "h-auto w-full justify-between px-3 py-2 text-sm text-white hover:bg-white/10 hover:text-white",
+                salesActive && "bg-white/12 text-white",
               )}
             >
               <span className="flex items-center gap-3">
@@ -64,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Sales
               </span>
               <ChevronDown className={cn("h-4 w-4 transition", salesOpen && "rotate-180")} />
-            </button>
+            </Button>
             {salesOpen && (
               <div className="ml-4 mt-1 space-y-1 border-l border-white/10 pl-3">
                 {salesNavItems.map((item) => {
@@ -75,8 +77,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                        active ? "bg-white/15 text-white" : "text-white/70 hover:bg-white/10",
+                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
+                        active ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/8",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -96,8 +98,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.disabled ? "#" : item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                  active ? "bg-white/15 text-white" : "text-white/70 hover:bg-white/10",
+                  "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
+                  active ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/8",
                   item.disabled && "cursor-not-allowed opacity-40",
                 )}
                 onClick={(e) => item.disabled && e.preventDefault()}
@@ -111,17 +113,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="app-shell-header no-print flex items-center justify-between border-b border-[var(--color-border)] bg-white px-6 py-4">
+        <header className="glass-header no-print flex items-center justify-between px-6 py-4">
           <div>
-            <p className="text-sm text-[var(--color-muted)]">Signed in as</p>
-            <p className="font-medium">{user?.name}</p>
+            <p className="text-sm text-muted-foreground">Signed in as</p>
+            <p className="font-medium tracking-tight">{user?.name}</p>
           </div>
-          <button
-            onClick={clearAuth}
-            className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-          >
+          <Button variant="outline" className="border-white/50 bg-white/40 backdrop-blur-md" onClick={clearAuth}>
             Sign out
-          </button>
+          </Button>
         </header>
         <main className="flex-1 p-6">{children}</main>
       </div>

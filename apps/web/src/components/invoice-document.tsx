@@ -54,17 +54,17 @@ export function InvoiceDocument({
         <div className="flex items-start justify-between gap-8">
           <div>
             <p className="text-2xl font-semibold tracking-tight">{agency.name}</p>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">{agency.tagline}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{agency.tagline}</p>
             {agency.gstin && (
-              <p className="mt-2 text-xs text-[var(--color-muted)]">GSTIN: {agency.gstin}</p>
+              <p className="mt-2 text-xs text-muted-foreground">GSTIN: {agency.gstin}</p>
             )}
           </div>
           <div className="text-right text-sm">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-primary)]">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               {title}
             </p>
             <p className="mt-2 font-mono text-base font-semibold">{invoice.number}</p>
-            <p className="mt-1 text-[var(--color-muted)]">Date: {formattedDate}</p>
+            <p className="mt-1 text-muted-foreground">Date: {formattedDate}</p>
             {invoice.documentType === "DRAFT" && (
               <p className="mt-2 text-xs text-amber-700">Not a tax invoice — for approval only</p>
             )}
@@ -73,18 +73,18 @@ export function InvoiceDocument({
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">Bill to</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Bill to</p>
             <p className="mt-2 font-semibold">{invoice.workspace?.name}</p>
-            <p className="text-sm text-[var(--color-muted)]">{invoice.workspace?.company}</p>
+            <p className="text-sm text-muted-foreground">{invoice.workspace?.company}</p>
             {invoice.workspace?.email && (
-              <p className="mt-1 text-sm text-[var(--color-muted)]">{invoice.workspace.email}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{invoice.workspace.email}</p>
             )}
           </div>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-muted)]">From</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">From</p>
             <p className="mt-2 font-semibold">{agency.name}</p>
-            <p className="text-sm text-[var(--color-muted)]">{agency.address}</p>
-            <p className="text-sm text-[var(--color-muted)]">{agency.email}</p>
+            <p className="text-sm text-muted-foreground">{agency.address}</p>
+            <p className="text-sm text-muted-foreground">{agency.email}</p>
           </div>
         </div>
       </header>
@@ -92,7 +92,7 @@ export function InvoiceDocument({
       <div className="px-10 py-8">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b text-left text-xs uppercase tracking-wide text-[var(--color-muted)]">
+            <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
               <th className="pb-3">Description</th>
               <th className="pb-3 text-right">Amount (₹)</th>
             </tr>
@@ -109,12 +109,12 @@ export function InvoiceDocument({
 
         <div className="mt-6 ml-auto max-w-xs space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-[var(--color-muted)]">Subtotal</span>
+            <span className="text-muted-foreground">Subtotal</span>
             <span className="font-mono">₹{subtotal.toLocaleString("en-IN")}</span>
           </div>
           {invoice.documentType !== "DRAFT" && (
             <div className="flex justify-between">
-              <span className="text-[var(--color-muted)]">GST (18%)</span>
+              <span className="text-muted-foreground">GST (18%)</span>
               <span className="font-mono">₹{gst.toLocaleString("en-IN")}</span>
             </div>
           )}
@@ -127,7 +127,7 @@ export function InvoiceDocument({
         </div>
 
         {invoice.documentType === "RECEIPT" && invoice.relatedInvoice && (
-          <p className="mt-6 text-sm text-[var(--color-muted)]">
+          <p className="mt-6 text-sm text-muted-foreground">
             Payment received against invoice <strong>{invoice.relatedInvoice.number}</strong>
             {invoice.paymentMode && ` via ${invoice.paymentMode.replace(/_/g, " ")}`}
             {invoice.paymentReference && ` (Ref: ${invoice.paymentReference})`}
@@ -135,7 +135,7 @@ export function InvoiceDocument({
         )}
 
         {invoice.dueDate && invoice.documentType === "TAX" && invoice.status !== "PAID" && (
-          <p className="mt-6 text-sm text-[var(--color-muted)]">
+          <p className="mt-6 text-sm text-muted-foreground">
             Due date: {new Date(invoice.dueDate).toLocaleDateString("en-IN")}
           </p>
         )}
@@ -143,7 +143,7 @@ export function InvoiceDocument({
         {agency.bankName && invoice.documentType !== "RECEIPT" && (
           <section className="mt-10 border-t border-[var(--color-border)] pt-8">
             <h2 className="text-sm font-semibold">Bank details</h2>
-            <div className="mt-3 grid gap-1 font-mono text-sm text-[var(--color-muted)]">
+            <div className="mt-3 grid gap-1 font-mono text-sm text-muted-foreground">
               <p>{agency.bankName}</p>
               <p>A/C: {agency.bankAccount}</p>
               <p>IFSC: {agency.bankIfsc}</p>
@@ -152,7 +152,7 @@ export function InvoiceDocument({
         )}
       </div>
 
-      <footer className="border-t border-[var(--color-border)] bg-[var(--color-bg)] px-10 py-6 text-center text-xs text-[var(--color-muted)]">
+      <footer className="border-t border-[var(--color-border)] bg-[var(--color-bg)] px-10 py-6 text-center text-xs text-muted-foreground">
         {agency.name} {agency.gstin ? `· GSTIN ${agency.gstin}` : ""} · {agency.email}
       </footer>
     </article>

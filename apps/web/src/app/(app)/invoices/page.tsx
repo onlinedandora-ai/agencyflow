@@ -9,7 +9,7 @@ import { useAuthStore } from "@/lib/auth-store";
 
 const TYPE_BADGES: Record<string, string> = {
   DRAFT: "bg-amber-50 text-amber-800",
-  TAX: "bg-indigo-50 text-[var(--color-primary)]",
+  TAX: "bg-indigo-50 text-primary",
   RECEIPT: "bg-green-50 text-green-800",
 };
 
@@ -146,7 +146,7 @@ export default function InvoicesPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold">Invoices</h1>
-          <p className="text-sm text-[var(--color-muted)]">
+          <p className="text-sm text-muted-foreground">
             Draft invoices, tax invoices, and payment receipts — all in one place
           </p>
         </div>
@@ -169,7 +169,7 @@ export default function InvoicesPage() {
             e.preventDefault();
             saveNumberingMutation.mutate();
           }}
-          className="grid gap-4 rounded-xl border bg-white p-5 md:grid-cols-3"
+          className="glass-panel grid gap-4 p-5 md:grid-cols-3"
         >
           <p className="md:col-span-3 text-sm font-medium">Admin invoice numbering (sequential)</p>
           {[
@@ -178,7 +178,7 @@ export default function InvoicesPage() {
             ["receiptPrefix", "receiptNextSeq", "Receipt prefix / next #"],
           ].map(([prefixKey, seqKey, label]) => (
             <div key={prefixKey}>
-              <label className="mb-1 block text-xs text-[var(--color-muted)]">{label}</label>
+              <label className="mb-1 block text-xs text-muted-foreground">{label}</label>
               <div className="flex gap-2">
                 <input
                   value={String(numbering[prefixKey as keyof typeof numbering])}
@@ -219,16 +219,16 @@ export default function InvoicesPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-[var(--color-muted)]">Loading invoices...</p>
+        <p className="text-sm text-muted-foreground">Loading invoices...</p>
       ) : invoices.length === 0 ? (
-        <div className="rounded-xl border border-dashed bg-white p-8 text-center">
-          <Receipt className="mx-auto h-8 w-8 text-[var(--color-muted)]" />
-          <p className="mt-3 text-sm text-[var(--color-muted)]">No invoices yet.</p>
+        <div className="glass-panel border-dashed p-8 text-center">
+          <Receipt className="mx-auto h-8 w-8 text-muted-foreground" />
+          <p className="mt-3 text-sm text-muted-foreground">No invoices yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {invoices.map((inv) => (
-            <article key={inv.id} className="rounded-xl border bg-white p-5">
+            <article key={inv.id} className="glass-panel p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -240,7 +240,7 @@ export default function InvoicesPage() {
                       {inv.status}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {inv.workspace?.company || inv.workspace?.name} · ₹
                     {Number(inv.amount).toLocaleString("en-IN")}
                     {inv.amountDue !== undefined && inv.amountDue > 0 && inv.amountPaid !== undefined && inv.amountPaid > 0 && (
@@ -262,7 +262,7 @@ export default function InvoicesPage() {
                           <span
                             className={cn(
                               "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                              m.status === "PAID" ? "bg-green-50 text-green-800" : "bg-[var(--color-bg)] text-[var(--color-muted)]",
+                              m.status === "PAID" ? "bg-green-50 text-green-800" : "bg-[var(--color-bg)] text-muted-foreground",
                             )}
                           >
                             {m.label}: ₹{Number(m.amount).toLocaleString("en-IN")} {m.status === "PAID" ? "✓" : ""}
@@ -280,13 +280,13 @@ export default function InvoicesPage() {
                                   clientEmail: null,
                                 });
                               }}
-                              className="text-[10px] font-medium text-[var(--color-primary)] hover:underline"
+                              className="text-[10px] font-medium text-primary hover:underline"
                             >
                               Send notification
                             </button>
                           )}
                           {(m.notifications?.length ?? 0) > 0 && (
-                            <span className="text-[10px] text-[var(--color-muted)]">
+                            <span className="text-[10px] text-muted-foreground">
                               · Notified {new Date(m.notifications![0].sentAt).toLocaleDateString("en-IN")}
                             </span>
                           )}
@@ -312,7 +312,7 @@ export default function InvoicesPage() {
                       href={inv.billingUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border px-3 py-1.5 text-xs text-[var(--color-primary)]"
+                      className="rounded-lg border px-3 py-1.5 text-xs text-primary"
                     >
                       Client link
                     </a>
@@ -359,9 +359,9 @@ export default function InvoicesPage() {
 
       {milestoneModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <div className="glass-panel-strong w-full max-w-md p-6">
             <h3 className="font-semibold">Payment milestones</h3>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
+            <p className="mt-1 text-sm text-muted-foreground">
               Team fixes the payment schedule on this invoice. Amounts must total the invoice value.
             </p>
             <select
@@ -398,9 +398,9 @@ export default function InvoicesPage() {
         const hasMilestones = pendingMilestones.length > 0;
         return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <div className="glass-panel-strong w-full max-w-md p-6">
             <h3 className="font-semibold">Record payment</h3>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
+            <p className="mt-1 text-sm text-muted-foreground">
               Each payment generates a separate receipt linked to this invoice.
             </p>
             {hasMilestones ? (

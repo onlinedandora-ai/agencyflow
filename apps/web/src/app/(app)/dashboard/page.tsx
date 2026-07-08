@@ -16,7 +16,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-semibold">Agency Dashboard</h1>
-        <p className="text-sm text-[var(--color-muted)]">Portfolio overview — MVP slice</p>
+        <p className="text-sm text-muted-foreground">Portfolio overview — MVP slice</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -26,21 +26,21 @@ export default function DashboardPage() {
           ["SLA breaches", stats?.slaBreaches ?? "—"],
           ["Needs first response", stats?.awaitingFirstResponse ?? "—"],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-            <p className="text-sm text-[var(--color-muted)]">{label}</p>
+          <div key={label} className="glass-panel p-5">
+            <p className="text-sm text-muted-foreground">{label}</p>
             <p className="mt-2 text-3xl font-semibold">{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-6">
+      <div className="glass-panel p-6">
         <h2 className="text-lg font-semibold">MVP progress</h2>
-        <ul className="mt-4 space-y-2 text-sm text-[var(--color-muted)]">
-          <li className="text-[var(--color-success)]">✓ CRM lead pipeline with SLA + drag-and-drop</li>
-          <li className="text-[var(--color-success)]">✓ Discovery call sheet (10 questions)</li>
-          <li className="text-[var(--color-success)]">✓ Proposal builder (6 sections, word limit, 24h timer)</li>
-          <li className="text-[var(--color-success)]">✓ Client onboarding + advance-payment gate</li>
-          <li className="text-[var(--color-success)]">✓ Task boards by service line (Kanban + gate)</li>
+        <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+          <li className="text-green-600">✓ CRM lead pipeline with SLA + drag-and-drop</li>
+          <li className="text-green-600">✓ Discovery call sheet (10 questions)</li>
+          <li className="text-green-600">✓ Proposal builder (6 sections, word limit, 24h timer)</li>
+          <li className="text-green-600">✓ Client onboarding + advance-payment gate</li>
+          <li className="text-green-600">✓ Task boards by service line (Kanban + gate)</li>
           <li>○ Delivery + revision round tracking (next)</li>
           <li>○ Invoicing + Razorpay integration</li>
           <li>○ Workflow automation engine (BullMQ)</li>

@@ -25,7 +25,7 @@ export function ProposalActivityTimeline({ history }: { history: ProposalHistory
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-[var(--color-muted)]">No send or revision activity yet.</p>
+      <p className="text-sm text-muted-foreground">No send or revision activity yet.</p>
     );
   }
 
@@ -37,9 +37,9 @@ export function ProposalActivityTimeline({ history }: { history: ProposalHistory
           return (
             <div
               key={`send-${log.id}`}
-              className="flex gap-3 rounded-lg border border-[var(--color-border)] bg-white p-4"
+              className="flex gap-3 glass-panel p-4"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[var(--color-primary)]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-primary">
                 {log.isResend ? <RefreshCw className="h-4 w-4" /> : <Send className="h-4 w-4" />}
               </div>
               <div className="min-w-0 flex-1">
@@ -47,11 +47,11 @@ export function ProposalActivityTimeline({ history }: { history: ProposalHistory
                   {log.isResend ? `Resent v${log.version}` : `Sent v${log.version}`}
                   {log.sentBy?.name ? ` · ${log.sentBy.name}` : ""}
                 </p>
-                <p className="text-xs text-[var(--color-muted)]">
+                <p className="text-xs text-muted-foreground">
                   {new Date(log.sentAt).toLocaleString("en-IN")}
                 </p>
                 {log.internalNote && (
-                  <p className="mt-1 text-xs text-[var(--color-muted)]">Note: {log.internalNote}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Note: {log.internalNote}</p>
                 )}
               </div>
             </div>
@@ -71,12 +71,12 @@ export function ProposalActivityTimeline({ history }: { history: ProposalHistory
               <p className="text-sm font-medium">
                 Revision requested on v{rev.versionAtRequest} · {STATUS_LABELS[rev.status]}
               </p>
-              <p className="text-xs text-[var(--color-muted)]">
+              <p className="text-xs text-muted-foreground">
                 {rev.requestedByName} · {new Date(rev.requestedAt).toLocaleString("en-IN")}
               </p>
               <p className="mt-2 text-sm leading-6">{rev.comments}</p>
               {rev.addressedInVersion && (
-                <p className="mt-1 text-xs text-[var(--color-success)]">
+                <p className="mt-1 text-xs text-green-600">
                   Addressed in v{rev.addressedInVersion}
                   {rev.addressedAt && ` · ${new Date(rev.addressedAt).toLocaleString("en-IN")}`}
                 </p>

@@ -1,6 +1,26 @@
 export const TASK_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 
+/** SOP delivery windows by priority */
+export const TASK_SLA_HOURS: Record<TaskPriority, number> = {
+  URGENT: 4,
+  HIGH: 24,
+  MEDIUM: 48,
+  LOW: 72,
+};
+
+export type TaskSla = {
+  active: boolean;
+  targetHours: number;
+  targetMinutes: number;
+  deadline: string | null;
+  remainingMinutes: number;
+  elapsedMinutes: number;
+  breached: boolean;
+  atRisk: boolean;
+  completed: boolean;
+};
+
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {
   LOW: "Low",
   MEDIUM: "Medium",
@@ -39,6 +59,34 @@ export function normalizePriority(value?: string | null): TaskPriority {
 
 export function canManageTasks(role?: string | null) {
   return role === "ADMIN" || role === "CLIENT_MANAGER";
+}
+
+export function formatSlaCountdown(sla?: TaskSla | null) {
+  if (!sla || !sla.active) return null;
+  if (sla.breached) {
+    const overdueHours = Math.max(1, Math.ceil(sla.elapsedMinutes / 60 - sla.targetHours));
+    return overdueHours < 24 ? `${overdueHours}h overdue` : `${Math.ceil(overdueHours / 24)}d overdue`;
+  }
+  if (sla.remainingMinutes < 60) return `${sla.remainingMinutes}m left`;
+  if (sla.remainingMinutes < 24 * 60) {
+    const hours = Math.ceil(sla.remainingMinutes / 60);
+    return `${hours}h left`;
+  }
+  const days = Math.ceil(sla.remainingMinutes / (60 * 24));
+  return `${days}d left`;
+}
+
+export function getSlaTimerClass(sla?: TaskSla | null) {
+  if (!sla || !sla.active) return "text-muted-foreground";
+  if (sla.breached) return "font-medium text-destructive";
+  if (sla.atRisk) return "font-medium text-amber-600";
+  return "text-muted-foreground";
+}
+
+export function sopDeadlinePreview(priority: TaskPriority, from = new Date()) {
+  const hours = TASK_SLA_HOURS[priority];
+  const deadline = new Date(from.getTime() + hours * 60 * 60 * 1000);
+  return { hours, deadline };
 }
 
 export function formatDueCountdown(dueDate?: string | null) {

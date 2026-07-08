@@ -94,7 +94,7 @@ export default function ProposalBuilderPage() {
   });
 
   if (isLoading || !proposal) {
-    return <p className="text-sm text-[var(--color-muted)]">Loading proposal...</p>;
+    return <p className="text-sm text-muted-foreground">Loading proposal...</p>;
   }
 
   const canEdit = proposal.canEdit !== false && !proposal.isAccepted;
@@ -113,17 +113,17 @@ export default function ProposalBuilderPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Link href="/proposals" className="text-[var(--color-muted)] hover:text-[var(--color-primary)]">
+        <Link href="/proposals" className="text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold">Proposal — {proposal.lead?.name}</h1>
-          <p className="text-sm text-[var(--color-muted)]">
+          <p className="text-sm text-muted-foreground">
             {proposal.proposalNumber || "Draft"}
             {(proposal.currentVersion ?? 0) > 0 && ` · v${proposal.currentVersion}`}
           </p>
         </div>
-        <Link href={`/discovery/${leadId}`} className="text-sm text-[var(--color-primary)]">
+        <Link href={`/discovery/${leadId}`} className="text-sm text-primary">
           Discovery →
         </Link>
         <Link
@@ -143,7 +143,7 @@ export default function ProposalBuilderPage() {
 
       {(proposal.currentVersion ?? 0) > 0 && clientUrl && (
         <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">
             Active client link (v{proposal.currentVersion})
           </p>
           <p className="mt-2 break-all font-mono text-sm">{clientUrl}</p>
@@ -172,8 +172,8 @@ export default function ProposalBuilderPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-4 rounded-xl border bg-white p-4 text-sm">
-        <span className={cn(proposal.overWordLimit && "font-medium text-[var(--color-warning)]")}>
+      <div className="flex flex-wrap items-center gap-4 glass-panel p-4 text-sm">
+        <span className={cn(proposal.overWordLimit && "font-medium text-amber-600")}>
           {proposal.wordCount} / {proposal.wordLimit} words
         </span>
         {proposal.status === "REVISION_REQUESTED" && (
@@ -189,13 +189,13 @@ export default function ProposalBuilderPage() {
       </div>
 
       {history && (history.sendLogs.length > 0 || history.revisionRequests.length > 0) && (
-        <div className="rounded-xl border bg-white p-4">
+        <div className="glass-panel p-4">
           <h2 className="mb-3 text-sm font-semibold">Activity log</h2>
           <ProposalActivityTimeline history={history} />
         </div>
       )}
 
-      <div className="rounded-xl border bg-white p-4">
+      <div className="glass-panel p-4">
         <label className="mb-2 block text-sm font-medium">Billing flow</label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex cursor-pointer gap-3 rounded-lg border p-3 has-[:checked]:border-[var(--color-primary)] has-[:checked]:bg-indigo-50/40">
@@ -210,7 +210,7 @@ export default function ProposalBuilderPage() {
             />
             <div>
               <p className="text-sm font-medium">Path A — Direct</p>
-              <p className="text-xs text-[var(--color-muted)]">
+              <p className="text-xs text-muted-foreground">
                 Client accepts → advance tax invoice sent immediately
               </p>
             </div>
@@ -227,7 +227,7 @@ export default function ProposalBuilderPage() {
             />
             <div>
               <p className="text-sm font-medium">Path B — Draft invoice first</p>
-              <p className="text-xs text-[var(--color-muted)]">
+              <p className="text-xs text-muted-foreground">
                 Client accepts → draft invoice PDF → requests tax invoice → payment
               </p>
             </div>
@@ -235,7 +235,7 @@ export default function ProposalBuilderPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-white p-4">
+      <div className="glass-panel p-4">
         <label className="mb-2 block text-sm font-medium">Attach pilot case study</label>
         <select
           value={caseStudyId}
@@ -254,7 +254,7 @@ export default function ProposalBuilderPage() {
 
       <div className="space-y-4">
         {SECTIONS.map((section) => (
-          <div key={section.key} className="rounded-xl border bg-white p-4">
+          <div key={section.key} className="glass-panel p-4">
             <label className="mb-2 block text-sm font-semibold">{section.label}</label>
             <textarea
               value={form[section.key] || ""}
@@ -267,10 +267,10 @@ export default function ProposalBuilderPage() {
           </div>
         ))}
 
-        <div className="rounded-xl border bg-white p-4">
+        <div className="glass-panel p-4">
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-semibold">Terms &amp; Conditions</label>
-            <span className="text-xs text-[var(--color-muted)]">Editable per proposal</span>
+            <span className="text-xs text-muted-foreground">Editable per proposal</span>
           </div>
           <textarea
             value={terms}

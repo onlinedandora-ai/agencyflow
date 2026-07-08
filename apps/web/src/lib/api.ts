@@ -1,9 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export { cn } from "./utils";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -169,6 +164,18 @@ export type ClientWorkspace = {
   invoices: Array<{ id: string; number: string; amount: string; status: string; isAdvance: boolean }>;
 };
 
+export type TaskSla = {
+  active: boolean;
+  targetHours: number;
+  targetMinutes: number;
+  deadline: string | null;
+  remainingMinutes: number;
+  elapsedMinutes: number;
+  breached: boolean;
+  atRisk: boolean;
+  completed: boolean;
+};
+
 export type TaskItem = {
   id: string;
   title: string;
@@ -178,6 +185,7 @@ export type TaskItem = {
   sortOrder: number;
   priority?: string | null;
   dueDate?: string | null;
+  sla?: TaskSla;
   revisionRound: number;
   isBlockedByGate?: boolean;
   gateReason?: string | null;
@@ -219,6 +227,7 @@ export type ProjectBoard = {
   isGateLocked: boolean;
   gateMessage?: string | null;
   overdueCount?: number;
+  slaBreaches?: number;
   completedCount?: number;
   urgentCount?: number;
   progressPercent?: number;
@@ -241,6 +250,7 @@ export type ProjectSummary = {
   taskCount: number;
   isGateLocked: boolean;
   overdueCount?: number;
+  slaBreaches?: number;
   completedCount?: number;
   urgentCount?: number;
   progressPercent?: number;

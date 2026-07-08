@@ -18,17 +18,21 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { AlertTriangle, ArrowLeft, GripVertical, Lock, Plus } from "lucide-react";
 import { TaskDetailDrawer } from "@/components/task-detail-drawer";
-import { api, cn, type BoardColumnData, type TaskItem } from "@/lib/api";
+import { TaskSlaTimer } from "@/components/task-sla-timer";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { api, type BoardColumnData, type TaskItem } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   canManageTasks,
-  formatDueCountdown,
   HEALTH_STYLES,
-  isOverdue,
   normalizePriority,
   PRIORITY_STYLES,
   type ProjectHealth,
 } from "@/lib/task-utils";
+import { cn } from "@/lib/utils";
 
 function CompactTaskCard({
   task,
@@ -45,22 +49,21 @@ function CompactTaskCard({
 }) {
   const priority = normalizePriority(task.priority);
   const priorityStyle = PRIORITY_STYLES[priority];
-  const overdue = isOverdue(task.dueDate, task.boardColumn, doneColumnKey);
-  const dueLabel = formatDueCountdown(task.dueDate);
 
   return (
     <article
       className={cn(
-        "overflow-hidden rounded-lg border border-[var(--color-border)] bg-white shadow-sm transition hover:border-[var(--color-primary)]",
-        isDragging && "opacity-50 ring-2 ring-[var(--color-primary)]",
-        task.isBlockedByGate && "border-amber-200 bg-amber-50/40",
+        "glass-panel overflow-hidden p-0 transition hover:border-primary/30",
+        isDragging && "opacity-50 ring-2 ring-primary",
+        task.isBlockedByGate && "border-amber-200/70",
+        task.sla?.breached && "border-destructive/40",
       )}
     >
       <div className={cn("h-1", priorityStyle.bar)} />
       <div className="flex items-stretch">
         <button
           type="button"
-          className="flex cursor-grab items-center px-1.5 text-[var(--color-muted)] active:cursor-grabbing"
+          className="flex cursor-grab items-center px-1.5 text-muted-foreground active:cursor-grabbing"
           aria-label="Drag task"
           {...dragHandleProps}
         >
@@ -75,16 +78,7 @@ function CompactTaskCard({
             <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", priorityStyle.dot)} />
             <div className="min-w-0 flex-1">
               <h3 className="line-clamp-2 text-sm font-medium leading-snug">{task.title}</h3>
-              {dueLabel && (
-                <p
-                  className={cn(
-                    "mt-1 text-[10px]",
-                    overdue ? "font-medium text-red-600" : "text-[var(--color-muted)]",
-                  )}
-                >
-                  {dueLabel}
-                </p>
-              )}
+              <TaskSlaTimer sla={task.sla} compact className="mt-1" />
             </div>
           </div>
         </button>
@@ -142,14 +136,14 @@ function BoardColumn({
     <section
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[480px] min-w-[200px] flex-1 flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 transition-colors",
-        isOver && !isLockedColumn && "border-[var(--color-primary)] bg-indigo-50/50",
+        "glass-panel flex min-h-[480px] min-w-[200px] flex-1 flex-col p-3 transition-colors",
+        isOver && !isLockedColumn && "border-primary/40 bg-white/70",
         isLockedColumn && "opacity-60",
       )}
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="truncate text-xs font-semibold uppercase tracking-wide">{column.label}</h2>
-        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs text-[var(--color-muted)]">
+        <span className="glass-badge shrink-0">
           {column.tasks.length}
         </span>
       </div>
@@ -256,7 +250,7 @@ export default function ProjectBoardPage() {
   }
 
   if (isLoading || !board) {
-    return <p className="text-sm text-[var(--color-muted)]">Loading board...</p>;
+    return <p className="text-sm text-muted-foreground">Loading board...</p>;
   }
 
   const firstColumnKey = board.columns[0]?.key ?? "";
@@ -268,73 +262,68 @@ export default function ProjectBoardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start gap-4">
-        <Link href="/projects" className="mt-1 text-[var(--color-muted)] hover:text-[var(--color-primary)]">
+        <Link href="/projects" className="mt-1 text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold">{board.projectName}</h1>
-            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium", healthStyle.bg)}>
-              <span className={cn("h-1.5 w-1.5 rounded-full", healthStyle.dot)} />
+            <Badge variant="secondary" className={healthStyle.bg}>
               {healthStyle.label}
-            </span>
+            </Badge>
           </div>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
+          <p className="mt-1 text-sm text-muted-foreground">
             {board.workspace.company} · {board.serviceLine}
           </p>
-          <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--color-muted)]">
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
             <span>{board.progressPercent ?? 0}% delivered</span>
             {(board.overdueCount ?? 0) > 0 && (
-              <span className="font-medium text-red-600">{board.overdueCount} overdue</span>
+              <span className="font-medium text-destructive">{board.overdueCount} overdue</span>
+            )}
+            {(board.slaBreaches ?? 0) > 0 && (
+              <span className="font-medium text-destructive">{board.slaBreaches} SLA breach</span>
             )}
             {(board.urgentCount ?? 0) > 0 && (
               <span className="font-medium text-amber-700">{board.urgentCount} urgent</span>
             )}
           </div>
-          <div className="mt-2 h-1.5 max-w-xs overflow-hidden rounded-full bg-[var(--color-bg)]">
-            <div
-              className="h-full rounded-full bg-[var(--color-primary)] transition-all"
-              style={{ width: `${board.progressPercent ?? 0}%` }}
-            />
-          </div>
+          <Progress value={board.progressPercent ?? 0} className="mt-2 max-w-xs" />
         </div>
         {canManage && (
-          <button
-            type="button"
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white"
-          >
+          <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Define task
-          </button>
+          </Button>
         )}
       </div>
 
       {board.isGateLocked && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <strong>Advance payment gate active.</strong> New work stays in the first column until advance is
-            confirmed on the{" "}
+        <Alert>
+          <Lock className="h-4 w-4" />
+          <AlertTitle>Advance payment gate active</AlertTitle>
+          <AlertDescription>
+            New work stays in the first column until advance is confirmed on the{" "}
             <Link href="/clients" className="underline">
               Clients
             </Link>{" "}
             page. Managers can still define and assign tasks.
-          </div>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {!canManage && (
-        <p className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-muted)]">
-          Click a task to see your assignment and timeline. Drag cards to update status.
-        </p>
+        <Alert>
+          <AlertDescription>
+            Click a task to see your assignment and timeline. Drag cards to update status.
+          </AlertDescription>
+        </Alert>
       )}
 
       {moveError && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          {moveError}
-        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{moveError}</AlertDescription>
+        </Alert>
       )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

@@ -53,28 +53,28 @@ function LeadCardContent({
   isDragging?: boolean;
 }) {
   const slaClass = lead.sla.breached
-    ? "text-[var(--color-danger)]"
+    ? "text-destructive"
     : lead.sla.remainingMinutes <= 10 && !lead.sla.responded
-      ? "text-[var(--color-warning)]"
-      : "text-[var(--color-muted)]";
+      ? "text-amber-600"
+      : "text-muted-foreground";
 
   return (
     <article
       className={cn(
-        "rounded-lg border border-[var(--color-border)] bg-white p-3 shadow-sm",
-        isDragging && "opacity-50 ring-2 ring-[var(--color-primary)]",
+        "glass-panel p-3",
+        isDragging && "opacity-50 ring-2 ring-primary",
       )}
     >
       <div className="flex items-start gap-2">
-        <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-muted)]" />
+        <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
               <h3 className="truncate font-medium">{lead.name}</h3>
-              <p className="truncate text-xs text-[var(--color-muted)]">{lead.company || "No company"}</p>
+              <p className="truncate text-xs text-muted-foreground">{lead.company || "No company"}</p>
             </div>
             {lead.sla.breached && !lead.sla.responded && (
-              <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--color-danger)]" />
+              <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
             )}
           </div>
 
@@ -103,14 +103,14 @@ function LeadCardContent({
             <Link
               href={`/discovery/${lead.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-xs text-[var(--color-primary)] hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Discovery
             </Link>
             <Link
               href={`/proposals/${lead.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-xs text-[var(--color-primary)] hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Proposal
             </Link>
@@ -122,7 +122,7 @@ function LeadCardContent({
                 e.stopPropagation();
                 onConvert(lead.id);
               }}
-              className="mt-2 rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-[var(--color-primary)]"
+              className="mt-2 rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary"
             >
               Convert to client
             </button>
@@ -175,15 +175,15 @@ function PipelineColumn({
     <section
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[420px] min-w-0 flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 transition-colors",
-        isOver && "border-[var(--color-primary)] bg-indigo-50/50",
+        "glass-panel flex min-h-[420px] min-w-0 flex-col p-3 transition-colors",
+        isOver && "border-primary/40 bg-white/70",
       )}
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="truncate text-xs font-semibold uppercase tracking-wide">
           {STAGE_LABELS[stage] || stage}
         </h2>
-        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-xs text-[var(--color-muted)]">
+        <span className="glass-badge shrink-0">
           {leads.length}
         </span>
       </div>
@@ -294,7 +294,7 @@ export default function PipelinePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold">Lead Pipeline</h1>
-          <p className="text-sm text-[var(--color-muted)]">
+          <p className="text-sm text-muted-foreground">
             Drag leads between columns to update their stage
           </p>
         </div>
@@ -315,8 +315,8 @@ export default function PipelinePage() {
             ["SLA breaches", stats.slaBreaches],
             ["Awaiting response", stats.awaitingFirstResponse],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-xl border border-[var(--color-border)] bg-white p-4">
-              <p className="text-xs text-[var(--color-muted)]">{label}</p>
+            <div key={label} className="glass-panel p-4">
+              <p className="text-xs text-muted-foreground">{label}</p>
               <p className="mt-1 text-2xl font-semibold">{value}</p>
             </div>
           ))}
@@ -329,7 +329,7 @@ export default function PipelinePage() {
             e.preventDefault();
             createMutation.mutate();
           }}
-          className="grid gap-3 rounded-xl border border-[var(--color-border)] bg-white p-4 md:grid-cols-4"
+          className="grid gap-3 glass-panel p-4 md:grid-cols-4"
         >
           <input
             placeholder="Name"
@@ -357,7 +357,7 @@ export default function PipelinePage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-[var(--color-muted)]">Loading pipeline...</p>
+        <p className="text-sm text-muted-foreground">Loading pipeline...</p>
       ) : (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-8">
