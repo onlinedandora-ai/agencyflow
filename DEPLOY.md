@@ -2,8 +2,12 @@
 
 ## 1. Push latest code
 
+Commits must use the **vaitahavya** Git author or Vercel will block the deployment.
+
 ```bash
-git add -A && git commit -m "Production deploy: glass UI, task SLA, Supabase, Docker API"
+git config --local user.name "vaitahavya"
+git config --local user.email "194759526+vaitahavya@users.noreply.github.com"
+git add -A && git commit -m "Your message"
 git push origin main
 ```
 

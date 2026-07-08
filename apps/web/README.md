@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+Deployed via Vercel Git integration on the **vaitahavya** account (`apps/web` root).
+
 ## Getting Started
 
 First, run the development server:
