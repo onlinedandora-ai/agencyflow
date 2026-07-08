@@ -1,5 +1,44 @@
 # Production deploy checklist
 
+## Current production setup (verified)
+
+| Service | Project | URL | Deploy trigger |
+|---------|---------|-----|----------------|
+| **Web** | Vercel `agencyflow-api` | https://agencyflow-api.vercel.app | **Git push → `main`** (auto) |
+| **API** | Render `agencyflow-api` | https://agencyflow-api-yrzo.onrender.com | **Git push → `main`** (auto) |
+| **DB** | Supabase | Singapore pooler | Manual migrations / seed |
+
+**Vercel Git integration (active):**
+
+- Repo: `vaitahavya/agencyflow`
+- Production branch: `main`
+- Root directory: `apps/web`
+- Framework: Next.js
+
+**Do not use** the separate Vercel project named `agencyflow` (repo root) — it builds the wrong app. Only `agencyflow-api` is production.
+
+---
+
+## Standard workflow (use this)
+
+```bash
+# 1. Commit with correct Git author (required for Vercel)
+git config --local user.name "vaitahavya"
+git config --local user.email "194759526+vaitahavya@users.noreply.github.com"
+
+git add -A && git commit -m "Your message"
+git push origin main
+```
+
+That single push deploys **both**:
+
+1. **Render** rebuilds the API (watch dashboard → agencyflow-api)
+2. **Vercel** auto-deploys the web app from `main` (watch dashboard → agencyflow-api)
+
+No `vercel --prod` needed unless Git integration is down.
+
+---
+
 ## 1. Push latest code
 
 Commits must use the **vaitahavya** Git author or Vercel will block the deployment.
@@ -48,19 +87,40 @@ Then use the encoded string as the password segment in both URLs.
 4. Wait for deploy → test your **real** Render URL (dashboard → agencyflow-api → copy URL):  
    `https://agencyflow-api-yrzo.onrender.com/health`
 
-## 3. Deploy web on Vercel
+## 3. Web on Vercel (already connected)
 
-1. https://vercel.com/new → Import **vaitahavya/agencyflow**
-2. **Root Directory:** `apps/web`
-3. **Environment variable:**
+Git auto-deploy is **already configured**. After `git push origin main`, Vercel builds automatically.
+
+**Production project:** `agencyflow-api` → https://agencyflow-api.vercel.app
+
+| Setting | Value |
+|---------|-------|
+| Root Directory | `apps/web` |
+| Production branch | `main` |
+| Install | `cd ../.. && npm install` (see `apps/web/vercel.json` for `--include=optional`) |
+| Build | `cd ../.. && npm run build --workspace=apps/web` |
+
+**Required env var** (Vercel → agencyflow-api → Settings → Environment Variables):
 
 ```
 NEXT_PUBLIC_API_URL=https://agencyflow-api-yrzo.onrender.com
 ```
 
-(Use your actual Render API URL from the dashboard.)
+**First-time setup only** (if reconnecting):
 
-4. Deploy → copy Vercel URL (e.g. `https://agencyflow.vercel.app`)
+1. https://vercel.com/new → Import **vaitahavya/agencyflow**
+2. Project name: `agencyflow-api`
+3. **Root Directory:** `apps/web`
+4. Add `NEXT_PUBLIC_API_URL` above
+5. Deploy
+
+To reconnect Git from CLI:
+
+```bash
+cd apps/web
+npx vercel link --project agencyflow-api
+npx vercel git connect https://github.com/vaitahavya/agencyflow
+```
 
 ## 4. Link API ↔ Web
 
@@ -83,14 +143,15 @@ npm run prisma:seed
 - [ ] Pipeline loads leads
 - [ ] Project board loads tasks
 
-## CLI shortcuts
+## CLI shortcuts (emergency / local only)
+
+Use **Git push** for normal deploys. CLI is for debugging or when Git hooks fail.
 
 ```bash
-# Vercel (after vercel login)
+# Emergency Vercel deploy (skip if git push already triggered a build)
 cd apps/web
-vercel link
-vercel env add NEXT_PUBLIC_API_URL production
-vercel --prod
+npx vercel link --project agencyflow-api
+npx vercel --prod
 
 # Test API Docker image locally
 docker build -f apps/api/Dockerfile -t agencyflow-api .
