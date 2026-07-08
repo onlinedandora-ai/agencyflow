@@ -38,10 +38,10 @@ Do **not** set `PORT` manually — Render assigns it automatically.
 3. **Environment variable:**
 
 ```
-NEXT_PUBLIC_API_URL=https://agencyflow-api.onrender.com
+NEXT_PUBLIC_API_URL=https://agencyflow-api-yrzo.onrender.com
 ```
 
-(Use your actual Render API URL.)
+(Use your actual Render API URL from the dashboard.)
 
 4. Deploy → copy Vercel URL (e.g. `https://agencyflow.vercel.app`)
 
