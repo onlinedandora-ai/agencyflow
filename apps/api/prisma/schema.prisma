@@ -160,6 +160,7 @@ model Lead {
   firstResponseAt DateTime?
   slaBreached     Boolean    @default(false)
   nurtureAt       DateTime?
+  archivedAt      DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   stageChangedAt  DateTime   @default(now())

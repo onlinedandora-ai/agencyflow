@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -8,6 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../common/roles.decorator';
+import { RolesGuard } from '../common/roles.guard';
 import { CreateLeadDto, LogFirstResponseDto, UpdateLeadDto } from './dto/lead.dto';
 import { LeadsService } from './leads.service';
 
@@ -31,6 +35,11 @@ export class LeadsController {
     return this.leadsService.getPipelineStats();
   }
 
+  @Get('archive')
+  findArchived() {
+    return this.leadsService.findArchived();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.leadsService.findOne(id);
@@ -49,5 +58,26 @@ export class LeadsController {
   @Post(':id/first-response')
   logFirstResponse(@Param('id') id: string, @Body() dto: LogFirstResponseDto) {
     return this.leadsService.logFirstResponse(id, dto);
+  }
+
+  @Post(':id/archive')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLIENT_MANAGER)
+  archive(@Param('id') id: string) {
+    return this.leadsService.archive(id);
+  }
+
+  @Post(':id/restore')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLIENT_MANAGER)
+  restore(@Param('id') id: string) {
+    return this.leadsService.restore(id);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLIENT_MANAGER)
+  remove(@Param('id') id: string) {
+    return this.leadsService.remove(id);
   }
 }

@@ -50,6 +50,7 @@ export class AutomationService {
       where: {
         firstResponseAt: null,
         slaBreached: false,
+        archivedAt: null,
         stage: LeadStage.NEW,
         createdAt: { lt: cutoff },
       },

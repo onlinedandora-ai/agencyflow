@@ -13,12 +13,17 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Clock, GripVertical, Plus } from "lucide-react";
+import { AlertTriangle, Archive, Clock, GripVertical, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { LeadEditDialog } from "@/components/lead-edit-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api, cn, type Lead, type PipelineColumn } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { canManageTasks } from "@/lib/task-utils";
 import { MobileStageSelect, StageChipBar } from "@/components/mobile-stage-picker";
+
+type DragHandleProps = React.HTMLAttributes<HTMLButtonElement>;
 
 const PIPELINE_STAGES = [
   "NEW",
@@ -47,6 +52,12 @@ function LeadCardContent({
   onRespond,
   onConvert,
   onStageChange,
+  onEdit,
+  onArchive,
+  canManage,
+  isConverted,
+  isConverting,
+  dragHandleProps,
   isDragging,
   mobile = false,
 }: {
@@ -54,6 +65,12 @@ function LeadCardContent({
   onRespond: (id: string) => void;
   onConvert: (id: string) => void;
   onStageChange?: (id: string, stage: string) => void;
+  onEdit?: (lead: Lead) => void;
+  onArchive?: (id: string) => void;
+  canManage?: boolean;
+  isConverted?: boolean;
+  isConverting?: boolean;
+  dragHandleProps?: DragHandleProps;
   isDragging?: boolean;
   mobile?: boolean;
 }) {
@@ -119,6 +136,32 @@ function LeadCardContent({
             >
               Proposal
             </Link>
+            {canManage && onEdit && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(lead);
+                }}
+                className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
+              </button>
+            )}
+            {canManage && onArchive && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onArchive(lead.id);
+                }}
+                className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-destructive"
+              >
+                <Archive className="h-3 w-3" />
+                Archive
+              </button>
+            )}
           </div>
 
           {(lead.stage === "NEGOTIATION" || lead.stage === "CLOSED_WON") && (
@@ -150,10 +193,16 @@ function DraggableLeadCard({
   lead,
   onRespond,
   onConvert,
+  onEdit,
+  onArchive,
+  canManage,
 }: {
   lead: Lead;
   onRespond: (id: string) => void;
   onConvert: (id: string) => void;
+  onEdit: (lead: Lead) => void;
+  onArchive: (id: string) => void;
+  canManage: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
@@ -166,7 +215,15 @@ function DraggableLeadCard({
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
-      <LeadCardContent lead={lead} onRespond={onRespond} onConvert={onConvert} isDragging={isDragging} />
+      <LeadCardContent
+        lead={lead}
+        onRespond={onRespond}
+        onConvert={onConvert}
+        onEdit={onEdit}
+        onArchive={onArchive}
+        canManage={canManage}
+        isDragging={isDragging}
+      />
     </div>
   );
 }
@@ -176,11 +233,17 @@ function PipelineColumn({
   leads,
   onRespond,
   onConvert,
+  onEdit,
+  onArchive,
+  canManage,
 }: {
   stage: string;
   leads: Lead[];
   onRespond: (id: string) => void;
   onConvert: (id: string) => void;
+  onEdit: (lead: Lead) => void;
+  onArchive: (id: string) => void;
+  canManage: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
 
@@ -202,7 +265,15 @@ function PipelineColumn({
       </div>
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
         {leads.map((lead) => (
-          <DraggableLeadCard key={lead.id} lead={lead} onRespond={onRespond} onConvert={onConvert} />
+          <DraggableLeadCard
+            key={lead.id}
+            lead={lead}
+            onRespond={onRespond}
+            onConvert={onConvert}
+            onEdit={onEdit}
+            onArchive={onArchive}
+            canManage={canManage}
+          />
         ))}
       </div>
     </section>
@@ -210,20 +281,30 @@ function PipelineColumn({
 }
 
 function normalizePipeline(columns: PipelineColumn[]): PipelineColumn[] {
-  const byStage = new Map(columns.map((col) => [col.stage, col.leads]));
+  const leadById = new Map<string, Lead>();
+  for (const col of columns) {
+    for (const lead of col.leads) {
+      if (!leadById.has(lead.id)) leadById.set(lead.id, lead);
+    }
+  }
+  const allLeads = Array.from(leadById.values());
   return PIPELINE_STAGES.map((stage) => ({
     stage,
-    leads: byStage.get(stage) ?? [],
+    leads: allLeads.filter((l) => l.stage === stage),
   }));
 }
 
 export default function PipelinePage() {
   const token = useAuthStore((s) => s.token)!;
+  const user = useAuthStore((s) => s.user);
+  const isManager = canManageTasks(user?.role);
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [mobileStage, setMobileStage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", company: "", source: "MANUAL" });
+  const [createError, setCreateError] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -264,8 +345,20 @@ export default function PipelinePage() {
     mutationFn: () => api.createLead(token, form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-stats"] });
       setShowForm(false);
       setForm({ name: "", email: "", company: "", source: "MANUAL" });
+      setCreateError("");
+    },
+    onError: (err: Error) => setCreateError(err.message),
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: (id: string) => api.archiveLead(token, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["leads-archive"] });
     },
   });
 
@@ -344,13 +437,24 @@ export default function PipelinePage() {
             <span className="md:hidden">Tap a stage, then use Move to update lead status</span>
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          New lead
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {isManager && (
+            <Link
+              href="/pipeline/archive"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/50 bg-white/40 px-4 py-2 text-sm font-medium backdrop-blur-md hover:bg-white/60"
+            >
+              <Archive className="h-4 w-4" />
+              Archive
+            </Link>
+          )}
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            New lead
+          </button>
+        </div>
       </div>
 
       {stats && (
@@ -373,6 +477,7 @@ export default function PipelinePage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (createMutation.isPending) return;
             createMutation.mutate();
           }}
           className="grid gap-3 glass-panel p-4 sm:grid-cols-2 md:grid-cols-4"
@@ -396,9 +501,16 @@ export default function PipelinePage() {
             onChange={(e) => setForm({ ...form, company: e.target.value })}
             className="rounded-lg border px-3 py-2"
           />
-          <button type="submit" className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-white">
-            Create lead
+          <button
+            type="submit"
+            disabled={createMutation.isPending}
+            className="rounded-lg bg-[var(--color-primary)] px-4 py-2 text-white disabled:opacity-60"
+          >
+            {createMutation.isPending ? "Creating…" : "Create lead"}
           </button>
+          {createError && (
+            <p className="text-sm text-destructive sm:col-span-2 md:col-span-4">{createError}</p>
+          )}
         </form>
       )}
 
@@ -424,9 +536,12 @@ export default function PipelinePage() {
                     key={lead.id}
                     lead={lead}
                     mobile
+                    canManage={isManager}
                     onRespond={(id) => respondMutation.mutate(id)}
                     onConvert={(id) => convertMutation.mutate(id)}
                     onStageChange={handleStageChange}
+                    onEdit={setEditingLead}
+                    onArchive={(id) => archiveMutation.mutate(id)}
                   />
                 ))
               )}
@@ -441,8 +556,11 @@ export default function PipelinePage() {
                   key={column.stage}
                   stage={column.stage}
                   leads={column.leads}
+                  canManage={isManager}
                   onRespond={(id) => respondMutation.mutate(id)}
                   onConvert={(id) => convertMutation.mutate(id)}
+                  onEdit={setEditingLead}
+                  onArchive={(id) => archiveMutation.mutate(id)}
                 />
               ))}
             </div>
@@ -457,6 +575,13 @@ export default function PipelinePage() {
           </DndContext>
         </>
       )}
+
+      <LeadEditDialog
+        open={Boolean(editingLead)}
+        lead={editingLead}
+        token={token}
+        onClose={() => setEditingLead(null)}
+      />
     </div>
   );
 }

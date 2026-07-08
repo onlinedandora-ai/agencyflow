@@ -13,6 +13,8 @@ const SLA_MINUTES = 30;
 export class LeadsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private activeLeadFilter = { archivedAt: null };
+
   private withSlaMeta<T extends { createdAt: Date; firstResponseAt: Date | null; slaBreached: boolean }>(lead: T) {
     const now = Date.now();
     const created = lead.createdAt.getTime();
@@ -32,10 +34,30 @@ export class LeadsService {
     };
   }
 
+  private dedupeById<T extends { id: string }>(leads: T[]) {
+    const seen = new Set<string>();
+    return leads.filter((lead) => {
+      if (seen.has(lead.id)) return false;
+      seen.add(lead.id);
+      return true;
+    });
+  }
+
   async findAll() {
     const leads = await this.prisma.lead.findMany({
+      where: this.activeLeadFilter,
       include: { assignee: { select: { id: true, name: true, email: true } } },
       orderBy: { createdAt: 'desc' },
+    });
+
+    return this.dedupeById(leads).map((lead) => this.withSlaMeta(lead));
+  }
+
+  async findArchived() {
+    const leads = await this.prisma.lead.findMany({
+      where: { archivedAt: { not: null } },
+      include: { assignee: { select: { id: true, name: true, email: true } } },
+      orderBy: { archivedAt: 'desc' },
     });
 
     return leads.map((lead) => this.withSlaMeta(lead));
@@ -69,8 +91,20 @@ export class LeadsService {
   }
 
   async create(dto: CreateLeadDto) {
+    const email = dto.email?.trim().toLowerCase();
+    if (email) {
+      const existing = await this.prisma.lead.findFirst({
+        where: { email, archivedAt: null },
+      });
+      if (existing) {
+        throw new BadRequestException(
+          'A lead with this email already exists in the pipeline. Edit the existing lead or archive it first.',
+        );
+      }
+    }
+
     const lead = await this.prisma.lead.create({
-      data: dto,
+      data: { ...dto, ...(email ? { email } : {}) },
       include: { assignee: { select: { id: true, name: true, email: true } } },
     });
 
@@ -78,12 +112,26 @@ export class LeadsService {
   }
 
   async update(id: string, dto: UpdateLeadDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
+    if (existing.archivedAt) {
+      throw new BadRequestException('Archived leads cannot be edited. Restore from archive first.');
+    }
+
+    const email = dto.email?.trim().toLowerCase();
+    if (email && email !== existing.email?.toLowerCase()) {
+      const duplicate = await this.prisma.lead.findFirst({
+        where: { email, archivedAt: null, id: { not: id } },
+      });
+      if (duplicate) {
+        throw new BadRequestException('Another active lead already uses this email.');
+      }
+    }
 
     const lead = await this.prisma.lead.update({
       where: { id },
       data: {
         ...dto,
+        ...(email ? { email } : {}),
         ...(dto.stage ? { stageChangedAt: new Date() } : {}),
       },
       include: { assignee: { select: { id: true, name: true, email: true } } },
@@ -92,8 +140,52 @@ export class LeadsService {
     return this.withSlaMeta(lead);
   }
 
+  async archive(id: string) {
+    const lead = await this.findOne(id);
+    if (lead.archivedAt) {
+      throw new BadRequestException('Lead is already archived');
+    }
+
+    const updated = await this.prisma.lead.update({
+      where: { id },
+      data: { archivedAt: new Date() },
+      include: { assignee: { select: { id: true, name: true, email: true } } },
+    });
+
+    return this.withSlaMeta(updated);
+  }
+
+  async restore(id: string) {
+    const lead = await this.findOne(id);
+    if (!lead.archivedAt) {
+      throw new BadRequestException('Lead is not archived');
+    }
+
+    const updated = await this.prisma.lead.update({
+      where: { id },
+      data: { archivedAt: null },
+      include: { assignee: { select: { id: true, name: true, email: true } } },
+    });
+
+    return this.withSlaMeta(updated);
+  }
+
+  async remove(id: string) {
+    const lead = await this.findOne(id);
+    if (!lead.archivedAt) {
+      throw new BadRequestException('Only archived leads can be permanently deleted.');
+    }
+
+    await this.prisma.lead.delete({ where: { id } });
+    return { message: 'Lead deleted permanently' };
+  }
+
   async logFirstResponse(id: string, dto: LogFirstResponseDto) {
     const existing = await this.findOne(id);
+
+    if (existing.archivedAt) {
+      throw new BadRequestException('Archived leads cannot be updated');
+    }
 
     if (existing.firstResponseAt) {
       throw new BadRequestException('First response already logged');
@@ -121,7 +213,7 @@ export class LeadsService {
   }
 
   async getPipelineStats() {
-    const leads = await this.prisma.lead.findMany();
+    const leads = await this.prisma.lead.findMany({ where: this.activeLeadFilter });
     const total = leads.length;
     const won = leads.filter((l) => l.stage === LeadStage.CLOSED_WON).length;
     const breached = leads.filter((l) => l.slaBreached).length;

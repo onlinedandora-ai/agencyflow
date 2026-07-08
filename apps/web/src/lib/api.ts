@@ -28,6 +28,7 @@ export type Lead = {
   notes?: string | null;
   firstResponseAt?: string | null;
   slaBreached: boolean;
+  archivedAt?: string | null;
   createdAt: string;
   assignee?: { id: string; name: string; email: string } | null;
   sla: LeadSla;
@@ -539,6 +540,13 @@ export const api = {
     apiFetch<Lead>("/leads", { method: "POST", body: JSON.stringify(data) }, token),
   updateLead: (token: string, id: string, data: Record<string, string>) =>
     apiFetch<Lead>(`/leads/${id}`, { method: "PATCH", body: JSON.stringify(data) }, token),
+  getArchivedLeads: (token: string) => apiFetch<Lead[]>("/leads/archive", {}, token),
+  archiveLead: (token: string, id: string) =>
+    apiFetch<Lead>(`/leads/${id}/archive`, { method: "POST" }, token),
+  restoreLead: (token: string, id: string) =>
+    apiFetch<Lead>(`/leads/${id}/restore`, { method: "POST" }, token),
+  deleteLead: (token: string, id: string) =>
+    apiFetch<{ message: string }>(`/leads/${id}`, { method: "DELETE" }, token),
   logFirstResponse: (token: string, id: string) =>
     apiFetch<Lead>(`/leads/${id}/first-response`, { method: "POST", body: JSON.stringify({}) }, token),
   getProposals: (token: string) => apiFetch<Proposal[]>("/proposals", {}, token),
@@ -602,7 +610,11 @@ export const api = {
   getWorkspace: (token: string, id: string) =>
     apiFetch<ClientWorkspace>(`/onboarding/workspaces/${id}`, {}, token),
   convertLead: (token: string, leadId: string) =>
-    apiFetch<ClientWorkspace>(`/onboarding/convert-lead/${leadId}`, { method: "POST", body: "{}" }, token),
+    apiFetch<{ workspace: ClientWorkspace; alreadyConverted: boolean }>(
+      `/onboarding/convert-lead/${leadId}`,
+      { method: "POST", body: "{}" },
+      token,
+    ),
   confirmAdvancePayment: (token: string, invoiceId: string) =>
     apiFetch<unknown>(`/onboarding/invoices/${invoiceId}/confirm-payment`, { method: "POST", body: "{}" }, token),
   getProjects: (token: string) => apiFetch<ProjectSummary[]>("/projects", {}, token),
