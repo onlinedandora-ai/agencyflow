@@ -550,9 +550,9 @@ export const api = {
     apiFetch<Lead>(`/leads/${id}`, { method: "PATCH", body: JSON.stringify(data) }, token),
   getArchivedLeads: (token: string) => apiFetch<Lead[]>("/leads/archive", {}, token),
   archiveLead: (token: string, id: string) =>
-    apiFetch<Lead>(`/leads/${id}/archive`, { method: "POST" }, token),
+    apiFetch<Lead>(`/leads/${id}/archive`, { method: "POST", body: "{}" }, token),
   restoreLead: (token: string, id: string) =>
-    apiFetch<Lead>(`/leads/${id}/restore`, { method: "POST" }, token),
+    apiFetch<Lead>(`/leads/${id}/restore`, { method: "POST", body: "{}" }, token),
   deleteLead: (token: string, id: string) =>
     apiFetch<{ message: string }>(`/leads/${id}`, { method: "DELETE" }, token),
   logFirstResponse: (token: string, id: string) =>

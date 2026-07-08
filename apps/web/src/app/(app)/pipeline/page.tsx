@@ -13,29 +13,25 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Archive, Briefcase, Clock, GripVertical, Pencil, Plus } from "lucide-react";
+import { AlertTriangle, Archive, Briefcase, Clock, GripVertical, MoreHorizontal, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { LeadEditDialog } from "@/components/lead-edit-dialog";
 import { NewWorkOnboardingDialog } from "@/components/new-work-onboarding-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { api, cn, type Lead, type PipelineColumn } from "@/lib/api";
+import { getLeadCardActions, PIPELINE_STAGES } from "@/lib/lead-actions";
 import { useAuthStore } from "@/lib/auth-store";
 import { canManageTasks } from "@/lib/task-utils";
 import { MobileStageSelect, StageChipBar } from "@/components/mobile-stage-picker";
 
 type DragHandleProps = React.HTMLAttributes<HTMLButtonElement>;
-
-const PIPELINE_STAGES = [
-  "NEW",
-  "CONTACTED",
-  "DISCOVERY_SCHEDULED",
-  "PROPOSAL_SENT",
-  "NEGOTIATION",
-  "CLOSED_WON",
-  "CLOSED_LOST",
-  "NURTURE",
-] as const;
 
 const STAGE_LABELS: Record<string, string> = {
   NEW: "New",
@@ -81,6 +77,9 @@ function LeadCardContent({
       ? "text-amber-600"
       : "text-muted-foreground";
 
+  const actions = getLeadCardActions(lead.stage);
+  const showLogResponse = actions.showLogResponse && !lead.sla.responded;
+
   return (
     <article
       className={cn(
@@ -101,13 +100,38 @@ function LeadCardContent({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <div>
+            <div className="min-w-0">
               <h3 className="truncate font-medium">{lead.name}</h3>
               <p className="truncate text-xs text-muted-foreground">{lead.company || "No company"}</p>
             </div>
-            {lead.sla.breached && !lead.sla.responded && (
-              <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
-            )}
+            <div className="flex shrink-0 items-center gap-1">
+              {lead.sla.breached && !lead.sla.responded && (
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              )}
+              {canManage && (onEdit || onArchive) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    type="button"
+                    className="rounded-md p-1 text-muted-foreground hover:bg-white/50 hover:text-foreground"
+                    aria-label="Lead actions"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    {onEdit && (
+                      <DropdownMenuItem onClick={() => onEdit(lead)}>Edit lead</DropdownMenuItem>
+                    )}
+                    {onArchive && (
+                      <DropdownMenuItem variant="destructive" onClick={() => onArchive(lead.id)}>
+                        Archive lead
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
 
           <div className={cn("mt-2 flex items-center gap-1 text-xs", slaClass)}>
@@ -119,83 +143,63 @@ function LeadCardContent({
             </span>
           </div>
 
-          {!lead.sla.responded && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRespond(lead.id);
-              }}
-              className="mt-3 rounded-md bg-[var(--color-primary)] px-2 py-1 text-xs text-white"
-            >
-              Log response
-            </button>
-          )}
-
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Link
-              href={`/discovery/${lead.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-primary hover:underline"
-            >
-              Discovery
-            </Link>
-            <Link
-              href={`/proposals/${lead.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-primary hover:underline"
-            >
-              Proposal
-            </Link>
-            {canManage && onEdit && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {showLogResponse && (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEdit(lead);
+                  onRespond(lead.id);
                 }}
-                className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
+                className="rounded-md bg-[var(--color-primary)] px-2 py-1 text-xs text-white"
               >
-                <Pencil className="h-3 w-3" />
-                Edit
+                Log response
               </button>
             )}
-            {canManage && onArchive && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onArchive(lead.id);
-                }}
-                className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-destructive"
-              >
-                <Archive className="h-3 w-3" />
-                Archive
-              </button>
-            )}
-          </div>
 
-          {(lead.stage === "NEGOTIATION" || lead.stage === "CLOSED_WON") &&
-            (isConverted ? (
+            {actions.showDiscovery && (
               <Link
-                href="/clients"
+                href={`/discovery/${lead.id}`}
                 onClick={(e) => e.stopPropagation()}
-                className="mt-2 inline-block text-xs text-primary hover:underline"
+                className="rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary"
               >
-                View client workspace
+                Discovery
               </Link>
-            ) : (
-              <button
-                type="button"
-                disabled={isConverting}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onConvert(lead.id);
-                }}
-                className="mt-2 rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            )}
+
+            {actions.showProposal && (
+              <Link
+                href={`/proposals/${lead.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary"
               >
-                {isConverting ? "Converting…" : "Convert to client"}
-              </button>
-            ))}
+                Proposal
+              </Link>
+            )}
+
+            {actions.showConvert &&
+              (isConverted ? (
+                <Link
+                  href="/clients"
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary"
+                >
+                  View client
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled={isConverting}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onConvert(lead.id);
+                  }}
+                  className="rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isConverting ? "Converting…" : "Convert to client"}
+                </button>
+              ))}
+          </div>
 
           {mobile && onStageChange && (
             <MobileStageSelect
@@ -344,6 +348,10 @@ export default function PipelinePage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [archiveFeedback, setArchiveFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [convertingLeadId, setConvertingLeadId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -422,8 +430,21 @@ export default function PipelinePage() {
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       queryClient.invalidateQueries({ queryKey: ["pipeline-stats"] });
       queryClient.invalidateQueries({ queryKey: ["leads-archive"] });
+      setArchiveFeedback({
+        type: "success",
+        message: "Lead archived. You can restore it from the archive page.",
+      });
+    },
+    onError: (err: Error) => {
+      setArchiveFeedback({ type: "error", message: err.message });
     },
   });
+
+  function handleArchive(leadId: string) {
+    if (!window.confirm("Archive this lead? It will be removed from the active pipeline.")) return;
+    setArchiveFeedback(null);
+    archiveMutation.mutate(leadId);
+  }
 
   function handleDragStart(event: DragStartEvent) {
     const lead = event.active.data.current?.lead as Lead | undefined;
@@ -543,6 +564,19 @@ export default function PipelinePage() {
         </Alert>
       )}
 
+      {archiveFeedback && (
+        <Alert variant={archiveFeedback.type === "error" ? "destructive" : "default"}>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+            <span>{archiveFeedback.message}</span>
+            {archiveFeedback.type === "success" && (
+              <Link href="/pipeline/archive" className="text-sm font-medium underline">
+                View archive
+              </Link>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {stats && (
         <div className="card-grid-stats">
           {[
@@ -629,7 +663,7 @@ export default function PipelinePage() {
                     onConvert={(id) => convertMutation.mutate(id)}
                     onStageChange={handleStageChange}
                     onEdit={setEditingLead}
-                    onArchive={(id) => archiveMutation.mutate(id)}
+                    onArchive={handleArchive}
                   />
                 ))
               )}
@@ -650,7 +684,7 @@ export default function PipelinePage() {
                   onRespond={(id) => respondMutation.mutate(id)}
                   onConvert={(id) => convertMutation.mutate(id)}
                   onEdit={setEditingLead}
-                  onArchive={(id) => archiveMutation.mutate(id)}
+                  onArchive={handleArchive}
                 />
               ))}
             </div>
