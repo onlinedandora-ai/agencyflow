@@ -84,6 +84,7 @@ export class ProjectsService {
       status: string;
       priority?: string | null;
       createdAt?: Date;
+      sla?: { breached: boolean };
     }>,
     serviceLine: string,
   ) {
@@ -98,7 +99,8 @@ export class ProjectsService {
         task.status !== 'APPROVED',
     ).length;
     const slaBreaches = tasks.filter((task) => {
-      const sla = computeTaskSla(
+      if (task.sla) return task.sla.breached;
+      return computeTaskSla(
         {
           priority: task.priority ?? 'MEDIUM',
           dueDate: task.dueDate,
@@ -107,8 +109,7 @@ export class ProjectsService {
           status: task.status,
         },
         doneColumn,
-      );
-      return sla.breached;
+      ).breached;
     }).length;
     const completedCount = tasks.filter((task) => task.boardColumn === doneColumn).length;
     const urgentCount = tasks.filter((task) => normalizePriority(task.priority as string) === 'URGENT').length;
@@ -117,6 +118,42 @@ export class ProjectsService {
       overdueCount > 0 || urgentCount > 2 ? 'red' : urgentCount > 0 || progressPercent < 40 ? 'yellow' : 'green';
 
     return { overdueCount, slaBreaches, completedCount, urgentCount, progressPercent, health };
+  }
+
+  private formatBoardTask(
+    task: {
+      id: string;
+      title: string;
+      status: string;
+      boardColumn: string;
+      sortOrder: number;
+      priority: string | null;
+      dueDate: Date | null;
+      revisionRound: number;
+      qaSignedOffAt: Date | null;
+      billableRevisionPending: boolean;
+      createdAt: Date;
+    },
+    serviceLine: string,
+    doneColumnKey: string | undefined,
+    isGateLocked: boolean,
+  ) {
+    const sla = computeTaskSla(task, doneColumnKey);
+
+    return {
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      boardColumn: task.boardColumn,
+      sortOrder: task.sortOrder,
+      priority: normalizePriority(task.priority),
+      dueDate: task.dueDate?.toISOString() ?? sla.deadline,
+      revisionRound: task.revisionRound,
+      qaSignedOffAt: task.qaSignedOffAt?.toISOString() ?? null,
+      billableRevisionPending: task.billableRevisionPending,
+      isBlockedByGate: isGateLocked && columnIndex(serviceLine, task.boardColumn) > 0,
+      sla,
+    };
   }
 
   getTemplates() {
@@ -221,27 +258,65 @@ export class ProjectsService {
   }
 
   async getBoard(projectId: string) {
-    const project = await this.findOne(projectId);
-    const columns = project.template.columns.map((col) => ({
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        workspace: {
+          select: { id: true, name: true, company: true, serviceLine: true },
+        },
+        tasks: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            boardColumn: true,
+            sortOrder: true,
+            priority: true,
+            dueDate: true,
+            revisionRound: true,
+            qaSignedOffAt: true,
+            billableRevisionPending: true,
+            createdAt: true,
+          },
+          orderBy: [{ boardColumn: 'asc' }, { sortOrder: 'asc' }],
+        },
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+
+    const serviceLine = project.workspace.serviceLine || 'Content Creation';
+    const template = getServiceLineTemplate(serviceLine);
+    const isGateLocked = project.status === ProjectStatus.AWAITING_ADVANCE;
+    const doneColumnKey = template.columns[template.columns.length - 1]?.key;
+
+    const formattedTasks = project.tasks.map((task) =>
+      this.formatBoardTask(task, serviceLine, doneColumnKey, isGateLocked),
+    );
+
+    const tasksByColumn = new Map<string, typeof formattedTasks>();
+    for (const task of formattedTasks) {
+      const list = tasksByColumn.get(task.boardColumn) ?? [];
+      list.push(task);
+      tasksByColumn.set(task.boardColumn, list);
+    }
+
+    const columns = template.columns.map((col) => ({
       ...col,
-      tasks: project.tasks
-        .filter((task) => task.boardColumn === col.key)
-        .map((task) => ({
-          ...task,
-          isBlockedByGate:
-            project.isGateLocked && columnIndex(project.serviceLine, task.boardColumn) > 0,
-        })),
+      tasks: tasksByColumn.get(col.key) ?? [],
     }));
 
     const stats = this.computeProjectStats(
-      project.tasks.map((task) => ({
+      formattedTasks.map((task) => ({
         boardColumn: task.boardColumn,
         dueDate: task.dueDate ? new Date(task.dueDate) : null,
         status: task.status,
         priority: task.priority,
-        createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
+        sla: task.sla,
       })),
-      project.serviceLine,
+      serviceLine,
     );
 
     return {
@@ -253,10 +328,12 @@ export class ProjectsService {
         name: project.workspace.name,
         company: project.workspace.company,
       },
-      serviceLine: project.serviceLine,
-      template: project.template,
-      isGateLocked: project.isGateLocked,
-      gateMessage: project.gateMessage,
+      serviceLine,
+      template,
+      isGateLocked,
+      gateMessage: isGateLocked
+        ? 'Advance payment required before tasks can move beyond the first column'
+        : null,
       columns,
       ...stats,
     };

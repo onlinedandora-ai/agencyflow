@@ -90,10 +90,11 @@ export function TaskDetailDrawer({
     enabled: open && canEdit,
   });
 
-  const { data: taskDetail } = useQuery({
+  const { data: taskDetail, isLoading: taskDetailLoading } = useQuery({
     queryKey: ["task", task?.id],
     queryFn: () => api.getTask(token, task!.id),
     enabled: open && mode === "view" && !!task?.id,
+    staleTime: 30_000,
   });
 
   useEffect(() => {
@@ -104,18 +105,19 @@ export function TaskDetailDrawer({
       setForm(emptyForm());
       return;
     }
-    if (task) {
+    const source = taskDetail ?? task;
+    if (source) {
       setEditing(false);
       setForm({
-        title: task.title,
-        description: task.description || "",
-        priority: normalizePriority(task.priority),
-        dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
-        assigneeId: task.assignee?.id || "",
-        customFields: task.customFields || {},
+        title: source.title,
+        description: source.description || "",
+        priority: normalizePriority(source.priority),
+        dueDate: source.dueDate ? source.dueDate.slice(0, 10) : "",
+        assigneeId: source.assignee?.id || "",
+        customFields: source.customFields || {},
       });
     }
-  }, [open, mode, task]);
+  }, [open, mode, task, taskDetail]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["project-board", projectId] });
@@ -343,6 +345,14 @@ export function TaskDetailDrawer({
           ) : (
             displayTask && (
               <div className="space-y-5">
+                {taskDetailLoading && mode === "view" && !taskDetail ? (
+                  <div className="space-y-3">
+                    <div className="h-6 w-3/4 animate-pulse rounded-md bg-muted" />
+                    <div className="h-16 animate-pulse rounded-md bg-muted/70" />
+                    <div className="h-24 animate-pulse rounded-md bg-muted/50" />
+                  </div>
+                ) : (
+                  <>
                 <div>
                   <h2 className="text-xl font-semibold leading-snug">{displayTask.title}</h2>
                   {displayTask.description ? (
@@ -528,6 +538,8 @@ export function TaskDetailDrawer({
                       <> · Updated {new Date(displayTask.updatedAt).toLocaleDateString()}</>
                     )}
                   </div>
+                )}
+                  </>
                 )}
               </div>
             )

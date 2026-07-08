@@ -35,6 +35,43 @@ import {
 import { cn } from "@/lib/utils";
 import { MobileStageSelect, StageChipBar } from "@/components/mobile-stage-picker";
 
+function BoardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="mt-1 h-5 w-5 animate-pulse rounded bg-muted" />
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+            <div className="h-5 w-16 animate-pulse rounded-full bg-muted/70" />
+          </div>
+          <div className="h-4 w-56 animate-pulse rounded bg-muted/70" />
+          <div className="flex gap-3">
+            <div className="h-3 w-20 animate-pulse rounded bg-muted/60" />
+            <div className="h-3 w-16 animate-pulse rounded bg-muted/60" />
+          </div>
+          <div className="h-2 max-w-xs animate-pulse rounded-full bg-muted/50" />
+        </div>
+      </div>
+      <div className="board-masonry">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <section key={i} className="glass-panel flex min-h-[200px] flex-col p-3">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-5 w-6 animate-pulse rounded-full bg-muted/70" />
+            </div>
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: i % 2 === 0 ? 2 : 1 }).map((__, j) => (
+                <div key={j} className="glass-panel h-20 animate-pulse bg-muted/30" />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function CompactTaskCard({
   task,
   doneColumnKey,
@@ -228,6 +265,7 @@ export default function ProjectBoardPage() {
   const { data: board, isLoading } = useQuery({
     queryKey: ["project-board", projectId],
     queryFn: () => api.getProjectBoard(token, projectId),
+    staleTime: 30_000,
   });
 
   const moveMutation = useMutation({
@@ -321,7 +359,7 @@ export default function ProjectBoardPage() {
   }
 
   if (isLoading || !board) {
-    return <p className="text-sm text-muted-foreground">Loading board...</p>;
+    return <BoardSkeleton />;
   }
 
   const firstColumnKey = board.columns[0]?.key ?? "";
