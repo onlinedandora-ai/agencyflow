@@ -264,7 +264,20 @@ model AgencyProfile {
   taxInvoiceNextSeq       Int      @default(1)
   receiptPrefix           String   @default("RCT")
   receiptNextSeq          Int      @default(1)
+  workflowSettings        Json?
   updatedAt               DateTime @updatedAt
+}
+
+model AutomationRun {
+  id        String   @id @default(cuid())
+  jobType   String
+  status    String
+  summary   String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([jobType])
+  @@index([createdAt])
 }
 
 model CaseStudy {

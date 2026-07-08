@@ -70,6 +70,52 @@ export type AgencyProfile = {
   defaultTermsAndConditions?: string | null;
 };
 
+export type WorkflowSettings = {
+  enabled: boolean;
+  leadSlaScan: boolean;
+  proposalFollowUp: boolean;
+  invoiceOverdue: boolean;
+  deliverableReviewNudge: boolean;
+};
+
+export type AutomationRun = {
+  id: string;
+  jobType: string;
+  status: string;
+  summary: string;
+  createdAt: string;
+};
+
+export type ReportsOverview = {
+  pipeline: PipelineStats;
+  revenue: {
+    totalInvoices: number;
+    collected: number;
+    outstanding: number;
+    overdueAmount: number;
+    overdueCount: number;
+    paidCount: number;
+  };
+  projects: Array<{
+    id: string;
+    name: string;
+    status: string;
+    client: string;
+    taskCount: number;
+    overdueCount: number;
+    completedCount: number;
+    progressPercent: number;
+    health: string;
+  }>;
+  deliverables: {
+    pendingReview: number;
+    awaitingClient: number;
+    clientApproved: number;
+  };
+  overdueProposals: number;
+  automation: { recentRuns: AutomationRun[] };
+};
+
 export type ProposalSendLog = {
   id: string;
   version: number;
@@ -536,6 +582,17 @@ export const api = {
       body: JSON.stringify(data),
     }),
   getAgencyProfile: (token: string) => apiFetch<AgencyProfile>("/settings/agency", {}, token),
+  updateAgencyProfile: (token: string, data: Partial<AgencyProfile>) =>
+    apiFetch<AgencyProfile>("/settings/agency", { method: "PATCH", body: JSON.stringify(data) }, token),
+  getWorkflowSettings: (token: string) => apiFetch<WorkflowSettings>("/settings/workflow", {}, token),
+  updateWorkflowSettings: (token: string, data: Partial<WorkflowSettings>) =>
+    apiFetch<WorkflowSettings>("/settings/workflow", { method: "PATCH", body: JSON.stringify(data) }, token),
+  getReportsOverview: (token: string) => apiFetch<ReportsOverview>("/reports/overview", {}, token),
+  getAutomationStatus: (token: string) =>
+    apiFetch<{ engine: string; redisConfigured: boolean }>("/automations/status", {}, token),
+  getAutomationRuns: (token: string) => apiFetch<AutomationRun[]>("/automations/runs", {}, token),
+  triggerAutomation: (token: string, jobType: string) =>
+    apiFetch(`/automations/trigger/${jobType}`, { method: "POST" }, token),
   getCaseStudies: (token: string) => apiFetch<CaseStudy[]>("/proposals/case-studies", {}, token),
   getDiscovery: (token: string, leadId: string) =>
     apiFetch<DiscoveryCall>(`/discovery/lead/${leadId}`, {}, token),

@@ -24,8 +24,8 @@ const mainNavItems = [
   { href: "/clients", label: "Clients", icon: Briefcase },
   { href: "/projects", label: "Projects", icon: Kanban },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/reports", label: "Reports", icon: BarChart3, disabled: true },
-  { href: "/settings", label: "Settings", icon: Settings, disabled: true },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const salesNavItems = [
@@ -97,13 +97,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             return (
               <Link
                 key={item.href}
-                href={item.disabled ? "#" : item.href}
+                href={item.href}
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
                   active ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/8",
-                  item.disabled && "cursor-not-allowed opacity-40",
                 )}
-                onClick={(e) => item.disabled && e.preventDefault()}
               >
                 <Icon className="h-4 w-4" />
                 {item.label}

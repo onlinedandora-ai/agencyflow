@@ -11,11 +11,13 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProposalsModule } from './proposals/proposals.module';
+import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, LeadsModule, ProposalsModule, DiscoveryModule, OnboardingModule, ProjectsModule, DeliverablesModule, InvoicesModule, ClientPortalModule, PaymentsModule, SettingsModule, UsersModule],
+  imports: [PrismaModule, AuthModule, LeadsModule, ProposalsModule, DiscoveryModule, OnboardingModule, ProjectsModule, DeliverablesModule, InvoicesModule, ClientPortalModule, PaymentsModule, SettingsModule, UsersModule, WorkflowsModule, ReportsModule],
   controllers: [HealthController],
 })
 export class AppModule {}
