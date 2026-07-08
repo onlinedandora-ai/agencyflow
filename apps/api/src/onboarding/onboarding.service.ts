@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { LeadStage, ProjectStatus } from '@prisma/client';
+import { DEFAULT_SERVICE_LINE } from '../common/service-line-templates';
 import { PrismaService } from '../prisma/prisma.service';
 import { InvoicesService } from '../invoices/invoices.service';
 import { PaymentMode } from '@prisma/client';
+import { CreateWorkspaceProjectDto } from './dto/onboarding.dto';
 
 @Injectable()
 export class OnboardingService {
@@ -33,6 +35,61 @@ export class OnboardingService {
     return workspace;
   }
 
+  async searchWorkspaces(q?: string) {
+    const term = q?.trim() ?? '';
+    const where = term
+      ? {
+          OR: [
+            { name: { contains: term, mode: 'insensitive' as const } },
+            { company: { contains: term, mode: 'insensitive' as const } },
+            { email: { contains: term, mode: 'insensitive' as const } },
+          ],
+        }
+      : undefined;
+
+    return this.prisma.clientWorkspace.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        company: true,
+        email: true,
+        serviceLine: true,
+      },
+      orderBy: { name: 'asc' },
+      take: 20,
+    });
+  }
+
+  async createProjectForWorkspace(workspaceId: string, dto: CreateWorkspaceProjectDto) {
+    const workspace = await this.prisma.clientWorkspace.findUnique({
+      where: { id: workspaceId },
+    });
+    if (!workspace) throw new NotFoundException('Workspace not found');
+
+    const serviceLine = dto.serviceLine || workspace.serviceLine || DEFAULT_SERVICE_LINE;
+
+    await this.prisma.$transaction([
+      this.prisma.project.create({
+        data: {
+          workspaceId,
+          name: dto.name.trim(),
+          status: ProjectStatus.AWAITING_ADVANCE,
+        },
+      }),
+      ...(dto.serviceLine && dto.serviceLine !== workspace.serviceLine
+        ? [
+            this.prisma.clientWorkspace.update({
+              where: { id: workspaceId },
+              data: { serviceLine: dto.serviceLine },
+            }),
+          ]
+        : []),
+    ]);
+
+    return this.getWorkspace(workspaceId);
+  }
+
   async convertLead(leadId: string) {
     const lead = await this.prisma.lead.findUnique({
       where: { id: leadId },
@@ -45,7 +102,9 @@ export class OnboardingService {
     }
 
     const existing = await this.prisma.clientWorkspace.findFirst({ where: { leadId } });
-    if (existing) return this.getWorkspace(existing.id);
+    if (existing) {
+      return { workspace: await this.getWorkspace(existing.id), alreadyConverted: true };
+    }
 
     const serviceLine = lead.proposal?.caseStudy?.serviceLine || 'Content Creation';
     const billingFlow = lead.proposal?.billingFlow || 'DIRECT';
@@ -75,7 +134,7 @@ export class OnboardingService {
       data: { stage: LeadStage.CLOSED_WON, stageChangedAt: new Date() },
     });
 
-    return this.getWorkspace(workspace.id);
+    return { workspace: await this.getWorkspace(workspace.id), alreadyConverted: false };
   }
 
   async confirmAdvancePayment(invoiceId: string) {

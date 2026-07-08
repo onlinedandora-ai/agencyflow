@@ -13,10 +13,11 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Archive, Clock, GripVertical, Pencil, Plus } from "lucide-react";
+import { AlertTriangle, Archive, Briefcase, Clock, GripVertical, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { LeadEditDialog } from "@/components/lead-edit-dialog";
+import { NewWorkOnboardingDialog } from "@/components/new-work-onboarding-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api, cn, type Lead, type PipelineColumn } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -88,7 +89,16 @@ function LeadCardContent({
       )}
     >
       <div className="flex items-start gap-2">
-        {!mobile && <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />}
+        {!mobile && (
+          <button
+            type="button"
+            className="mt-0.5 flex cursor-grab items-center text-muted-foreground active:cursor-grabbing"
+            aria-label="Drag lead"
+            {...dragHandleProps}
+          >
+            <GripVertical className="h-4 w-4 shrink-0" />
+          </button>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -164,17 +174,28 @@ function LeadCardContent({
             )}
           </div>
 
-          {(lead.stage === "NEGOTIATION" || lead.stage === "CLOSED_WON") && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onConvert(lead.id);
-              }}
-              className="mt-2 rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary"
-            >
-              Convert to client
-            </button>
-          )}
+          {(lead.stage === "NEGOTIATION" || lead.stage === "CLOSED_WON") &&
+            (isConverted ? (
+              <Link
+                href="/clients"
+                onClick={(e) => e.stopPropagation()}
+                className="mt-2 inline-block text-xs text-primary hover:underline"
+              >
+                View client workspace
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled={isConverting}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onConvert(lead.id);
+                }}
+                className="mt-2 rounded-md border border-[var(--color-primary)] px-2 py-1 text-xs text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isConverting ? "Converting…" : "Convert to client"}
+              </button>
+            ))}
 
           {mobile && onStageChange && (
             <MobileStageSelect
@@ -196,6 +217,8 @@ function DraggableLeadCard({
   onEdit,
   onArchive,
   canManage,
+  isConverted,
+  convertingLeadId,
 }: {
   lead: Lead;
   onRespond: (id: string) => void;
@@ -203,6 +226,8 @@ function DraggableLeadCard({
   onEdit: (lead: Lead) => void;
   onArchive: (id: string) => void;
   canManage: boolean;
+  isConverted: boolean;
+  convertingLeadId: string | null;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
@@ -214,7 +239,7 @@ function DraggableLeadCard({
     : undefined;
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
+    <div ref={setNodeRef} style={style}>
       <LeadCardContent
         lead={lead}
         onRespond={onRespond}
@@ -222,6 +247,9 @@ function DraggableLeadCard({
         onEdit={onEdit}
         onArchive={onArchive}
         canManage={canManage}
+        isConverted={isConverted}
+        isConverting={convertingLeadId === lead.id}
+        dragHandleProps={{ ...listeners, ...attributes }}
         isDragging={isDragging}
       />
     </div>
@@ -236,6 +264,8 @@ function PipelineColumn({
   onEdit,
   onArchive,
   canManage,
+  convertedLeadIds,
+  convertingLeadId,
 }: {
   stage: string;
   leads: Lead[];
@@ -244,6 +274,8 @@ function PipelineColumn({
   onEdit: (lead: Lead) => void;
   onArchive: (id: string) => void;
   canManage: boolean;
+  convertedLeadIds: Set<string>;
+  convertingLeadId: string | null;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
 
@@ -273,6 +305,8 @@ function PipelineColumn({
             onEdit={onEdit}
             onArchive={onArchive}
             canManage={canManage}
+            isConverted={convertedLeadIds.has(lead.id)}
+            convertingLeadId={convertingLeadId}
           />
         ))}
       </div>
@@ -300,11 +334,17 @@ export default function PipelinePage() {
   const isManager = canManageTasks(user?.role);
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [showNewWork, setShowNewWork] = useState(false);
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [mobileStage, setMobileStage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", company: "", source: "MANUAL" });
   const [createError, setCreateError] = useState("");
+  const [convertFeedback, setConvertFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [convertingLeadId, setConvertingLeadId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -321,6 +361,15 @@ export default function PipelinePage() {
     queryFn: () => api.getStats(token),
   });
 
+  const { data: workspaces = [] } = useQuery({
+    queryKey: ["workspaces"],
+    queryFn: () => api.getWorkspaces(token),
+  });
+
+  const convertedLeadIds = new Set(
+    workspaces.map((ws) => ws.leadId).filter((id): id is string => Boolean(id)),
+  );
+
   const respondMutation = useMutation({
     mutationFn: (id: string) => api.logFirstResponse(token, id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pipeline"] }),
@@ -335,10 +384,24 @@ export default function PipelinePage() {
 
   const convertMutation = useMutation({
     mutationFn: (leadId: string) => api.convertLead(token, leadId),
-    onSuccess: () => {
+    onMutate: (leadId) => {
+      setConvertingLeadId(leadId);
+      setConvertFeedback(null);
+    },
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      setConvertFeedback({
+        type: "success",
+        message: result.alreadyConverted
+          ? "This lead was already converted to a client workspace."
+          : "Lead converted to client workspace successfully.",
+      });
     },
+    onError: (err: Error) => {
+      setConvertFeedback({ type: "error", message: err.message });
+    },
+    onSettled: () => setConvertingLeadId(null),
   });
 
   const createMutation = useMutation({
@@ -447,6 +510,16 @@ export default function PipelinePage() {
               Archive
             </Link>
           )}
+          {isManager && (
+            <button
+              type="button"
+              onClick={() => setShowNewWork(true)}
+              className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-white/50 bg-white/40 px-4 py-2 text-sm font-medium backdrop-blur-md hover:bg-white/60 sm:w-auto"
+            >
+              <Briefcase className="h-4 w-4" />
+              Onboard existing client
+            </button>
+          )}
           <button
             onClick={() => setShowForm((v) => !v)}
             className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white sm:w-auto"
@@ -456,6 +529,19 @@ export default function PipelinePage() {
           </button>
         </div>
       </div>
+
+      {convertFeedback && (
+        <Alert variant={convertFeedback.type === "error" ? "destructive" : "default"}>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+            <span>{convertFeedback.message}</span>
+            {convertFeedback.type === "success" && (
+              <Link href="/clients" className="text-sm font-medium underline">
+                View clients
+              </Link>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {stats && (
         <div className="card-grid-stats">
@@ -537,6 +623,8 @@ export default function PipelinePage() {
                     lead={lead}
                     mobile
                     canManage={isManager}
+                    isConverted={convertedLeadIds.has(lead.id)}
+                    isConverting={convertingLeadId === lead.id}
                     onRespond={(id) => respondMutation.mutate(id)}
                     onConvert={(id) => convertMutation.mutate(id)}
                     onStageChange={handleStageChange}
@@ -557,6 +645,8 @@ export default function PipelinePage() {
                   stage={column.stage}
                   leads={column.leads}
                   canManage={isManager}
+                  convertedLeadIds={convertedLeadIds}
+                  convertingLeadId={convertingLeadId}
                   onRespond={(id) => respondMutation.mutate(id)}
                   onConvert={(id) => convertMutation.mutate(id)}
                   onEdit={setEditingLead}
@@ -581,6 +671,14 @@ export default function PipelinePage() {
         lead={editingLead}
         token={token}
         onClose={() => setEditingLead(null)}
+      />
+
+      <NewWorkOnboardingDialog
+        open={showNewWork}
+        token={token}
+        title="Onboard existing client"
+        description="Attach new work to an existing client workspace without converting a lead."
+        onClose={() => setShowNewWork(false)}
       />
     </div>
   );

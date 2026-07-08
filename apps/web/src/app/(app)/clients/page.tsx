@@ -3,11 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
-import { CheckCircle2, Clock, FileCheck, Lock, Unlock } from "lucide-react";
+import { CheckCircle2, Clock, FileCheck, Lock, Plus, Unlock } from "lucide-react";
 import { api, cn } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NewWorkOnboardingDialog } from "@/components/new-work-onboarding-dialog";
 
 function IntakeBadge({ done, label }: { done: boolean; label: string }) {
   return (
@@ -27,6 +28,7 @@ export default function ClientsPage() {
   const token = useAuthStore((s) => s.token)!;
   const queryClient = useQueryClient();
   const [rejectNote, setRejectNote] = useState<Record<string, string>>({});
+  const [showNewWork, setShowNewWork] = useState(false);
 
   const { data: workspaces = [], isLoading } = useQuery({
     queryKey: ["workspaces"],
@@ -55,11 +57,17 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="page-title">Client Workspaces</h1>
-        <p className="text-sm text-muted-foreground">
-          SOP onboarding intake, brand assets, access &amp; bank-transfer payment validation
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="page-title">Client Workspaces</h1>
+          <p className="text-sm text-muted-foreground">
+            SOP onboarding intake, brand assets, access &amp; bank-transfer payment validation
+          </p>
+        </div>
+        <Button onClick={() => setShowNewWork(true)} className="shrink-0 gap-2">
+          <Plus className="h-4 w-4" />
+          New work for existing client
+        </Button>
       </div>
 
       {pendingClaims.length > 0 && (
@@ -223,6 +231,11 @@ export default function ClientsPage() {
           })}
         </div>
       )}
+      <NewWorkOnboardingDialog
+        open={showNewWork}
+        token={token}
+        onClose={() => setShowNewWork(false)}
+      />
     </div>
   );
 }

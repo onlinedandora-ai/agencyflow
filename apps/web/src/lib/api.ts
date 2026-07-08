@@ -214,6 +214,14 @@ export type ClientWorkspace = {
   invoices: Array<{ id: string; number: string; amount: string; status: string; isAdvance: boolean }>;
 };
 
+export type WorkspaceSearchResult = {
+  id: string;
+  name: string;
+  company?: string | null;
+  email?: string | null;
+  serviceLine?: string | null;
+};
+
 export type OnboardingIntake = {
   company: {
     legalName: string;
@@ -607,8 +615,23 @@ export const api = {
   upsertDiscovery: (token: string, leadId: string, data: Record<string, unknown>) =>
     apiFetch<DiscoveryCall>(`/discovery/lead/${leadId}`, { method: "PUT", body: JSON.stringify(data) }, token),
   getWorkspaces: (token: string) => apiFetch<ClientWorkspace[]>("/onboarding/workspaces", {}, token),
+  searchWorkspaces: (token: string, q = "") =>
+    apiFetch<WorkspaceSearchResult[]>(
+      `/onboarding/workspaces/search${q ? `?q=${encodeURIComponent(q)}` : ""}`,
+      {},
+      token,
+    ),
   getWorkspace: (token: string, id: string) =>
     apiFetch<ClientWorkspace>(`/onboarding/workspaces/${id}`, {}, token),
+  createWorkspaceProject: (
+    token: string,
+    workspaceId: string,
+    data: { name: string; serviceLine?: string },
+  ) =>
+    apiFetch<ClientWorkspace>(`/onboarding/workspaces/${workspaceId}/new-project`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
   convertLead: (token: string, leadId: string) =>
     apiFetch<{ workspace: ClientWorkspace; alreadyConverted: boolean }>(
       `/onboarding/convert-lead/${leadId}`,
