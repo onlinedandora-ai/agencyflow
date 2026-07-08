@@ -3,7 +3,28 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
+/** Strip accidental quotes/whitespace from Render / dashboard env pastes. */
+function sanitizeEnv(key: string) {
+  const raw = process.env[key];
+  if (raw == null) return;
+  const trimmed = raw.trim().replace(/^['"]|['"]$/g, '');
+  if (trimmed !== raw) process.env[key] = trimmed;
+}
+
+sanitizeEnv('DATABASE_URL');
+sanitizeEnv('DIRECT_URL');
+sanitizeEnv('WEB_ORIGIN');
+sanitizeEnv('JWT_SECRET');
+
 async function bootstrap() {
+  const databaseUrl = process.env.DATABASE_URL ?? '';
+  if (!/^postgres(ql)?:\/\//i.test(databaseUrl)) {
+    console.error(
+      'DATABASE_URL must start with postgresql:// (remove quotes if pasting into Render).',
+    );
+    process.exit(1);
+  }
+
   const app = await NestFactory.create(AppModule);
 
   const webOrigins = (process.env.WEB_ORIGIN || 'http://localhost:3000')

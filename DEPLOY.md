@@ -26,9 +26,10 @@ git push origin main
 
 Do **not** set `PORT` manually — Render assigns it automatically.
 
-**Common mistake:** pasting `"postgresql://..."` with quotes breaks the URL. Paste the raw URL only.
+**Common mistake:** pasting `"postgresql://..."` with quotes breaks the URL. Paste the raw URL only (no surrounding `"` or `'`).
 
-4. Wait for deploy → test: `https://agencyflow-api.onrender.com/health`
+4. Wait for deploy → test your **real** Render URL (dashboard → agencyflow-api → copy URL), e.g.  
+   `https://agencyflow-api-xxxx.onrender.com/health`
 
 ## 3. Deploy web on Vercel
 
