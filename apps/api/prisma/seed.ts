@@ -126,7 +126,11 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@agencyflow.com' },
-    update: {},
+    update: {
+      passwordHash,
+      name: 'Agency Admin',
+      role: UserRole.ADMIN,
+    },
     create: {
       email: 'admin@agencyflow.com',
       passwordHash,
@@ -137,7 +141,11 @@ async function main() {
 
   const manager = await prisma.user.upsert({
     where: { email: 'manager@agencyflow.com' },
-    update: {},
+    update: {
+      passwordHash,
+      name: 'Client Manager',
+      role: UserRole.CLIENT_MANAGER,
+    },
     create: {
       email: 'manager@agencyflow.com',
       passwordHash,
@@ -148,7 +156,11 @@ async function main() {
 
   const deliveryExec = await prisma.user.upsert({
     where: { email: 'exec@agencyflow.com' },
-    update: {},
+    update: {
+      passwordHash,
+      name: 'Priya Delivery',
+      role: UserRole.DELIVERY_EXEC,
+    },
     create: {
       email: 'exec@agencyflow.com',
       passwordHash,

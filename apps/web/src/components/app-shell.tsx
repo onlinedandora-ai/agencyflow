@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BarChart3,
@@ -123,7 +123,13 @@ function SidebarNav({
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, clearAuth } = useAuthStore();
+
+  function handleSignOut() {
+    clearAuth();
+    router.replace("/login");
+  }
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [salesOpen, setSalesOpen] = useState(
     pathname.startsWith("/proposals") || pathname.startsWith("/invoices"),
@@ -172,7 +178,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             variant="outline"
             size="sm"
             className="shrink-0 border-white/50 bg-white/40 backdrop-blur-md"
-            onClick={clearAuth}
+            onClick={handleSignOut}
           >
             Sign out
           </Button>

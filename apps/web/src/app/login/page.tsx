@@ -13,6 +13,7 @@ import { useAuthStore } from "@/lib/auth-store";
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [email, setEmail] = useState("admin@agencyflow.com");
   const [password, setPassword] = useState("demo123");
   const [error, setError] = useState("");
@@ -20,13 +21,14 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!hasHydrated) return;
     setLoading(true);
     setError("");
 
     try {
       const result = await api.login(email, password);
       setAuth(result.accessToken, result.user);
-      router.push("/pipeline");
+      router.replace("/pipeline");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign-in failed";
       if (message === "Failed to fetch" || message.includes("NetworkError")) {
@@ -93,12 +95,17 @@ export default function LoginPage() {
                 </Alert>
               )}
 
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={loading || !hasHydrated}
+              >
+                {loading ? "Signing in..." : hasHydrated ? "Sign in" : "Loading…"}
               </Button>
 
               <p className="text-center text-xs text-muted-foreground">
-                Demo: admin@agencyflow.com / demo123
+                Demo accounts (password: demo123): admin@, manager@, exec@agencyflow.com
               </p>
             </form>
           </CardContent>

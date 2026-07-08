@@ -24,6 +24,14 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "agencyflow-auth",
       partialize: (state) => ({ token: state.token, user: state.user }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<Pick<AuthState, "token" | "user">> | undefined;
+        return {
+          ...currentState,
+          token: currentState.token ?? persisted?.token ?? null,
+          user: currentState.user ?? persisted?.user ?? null,
+        };
+      },
       onRehydrateStorage: () => () => {
         useAuthStore.setState({ _hasHydrated: true });
       },
