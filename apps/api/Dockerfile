@@ -9,6 +9,7 @@ RUN npm ci --workspace=apps/api --include-workspace-root --ignore-scripts
 
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY package.json package-lock.json ./
 COPY apps/api ./apps/api
 WORKDIR /app/apps/api
@@ -18,10 +19,10 @@ FROM base AS runner
 ENV NODE_ENV=production
 WORKDIR /app/apps/api
 COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/apps/api/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/package.json ./
 COPY --from=build /app/apps/api/prisma ./prisma
 
-EXPOSE 3001
-# db push keeps Supabase in sync (schema evolved via push during MVP)
-CMD ["sh", "-c", "npx prisma db push && node dist/main.js"]
+EXPOSE 10000
+CMD ["node", "dist/src/main.js"]
