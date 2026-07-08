@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Calendar, CheckCircle2, Clock, Pencil, Save, ShieldCheck, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TaskSlaTimer } from "@/components/task-sla-timer";
+import { TaskDeliverablesPanel } from "@/components/task-deliverables-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -458,11 +459,22 @@ export function TaskDetailDrawer({
                   </Alert>
                 )}
 
+                {mode === "view" && task?.id && (
+                  <TaskDeliverablesPanel
+                    taskId={task.id}
+                    token={token}
+                    userRole={userRole}
+                    projectId={projectId}
+                  />
+                )}
+
                 {mode === "view" && isBeforeClientReview && !displayTask.qaSignedOffAt && (
                   <Alert>
                     <ShieldCheck className="h-4 w-4" />
                     <AlertDescription className="space-y-2">
-                      <p>Peer QA sign-off required before this task can move to client review.</p>
+                      <p>
+                        After deliverables are approved and shared, a peer (not the assignee) signs off internal QA before the board moves to client review.
+                      </p>
                       <Button
                         type="button"
                         size="sm"

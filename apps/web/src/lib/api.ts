@@ -260,6 +260,35 @@ export type TaskSla = {
   completed: boolean;
 };
 
+export type TaskDeliverable = {
+  id: string;
+  type: "DOCUMENT" | "LINK";
+  label?: string | null;
+  url?: string | null;
+  fileName?: string | null;
+  mimeType?: string | null;
+  fileDataUrl?: string | null;
+  version: number;
+  status: string;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  sharedAt?: string | null;
+  publicToken?: string | null;
+  publicUrl?: string | null;
+  clientApprovedAt?: string | null;
+  clientFeedback?: string | null;
+  hasFile?: boolean;
+  submittedBy?: { id: string; name: string } | null;
+  reviewedBy?: { id: string; name: string } | null;
+  sharedBy?: { id: string; name: string } | null;
+  task?: {
+    id: string;
+    title: string;
+    project?: { id?: string; name: string; workspace?: { name: string; company?: string | null } };
+  };
+};
+
 export type TaskItem = {
   id: string;
   title: string;
@@ -558,6 +587,55 @@ export const api = {
     apiFetch<TaskItem>(`/projects/tasks/${taskId}/qa-signoff`, { method: "POST" }, token),
   acknowledgeBillableRevision: (token: string, taskId: string) =>
     apiFetch<TaskItem>(`/projects/tasks/${taskId}/acknowledge-billable-revision`, { method: "POST" }, token),
+  getTaskDeliverables: (token: string, taskId: string) =>
+    apiFetch<TaskDeliverable[]>(`/projects/tasks/${taskId}/deliverables`, {}, token),
+  createTaskDeliverable: (
+    token: string,
+    taskId: string,
+    data: {
+      type: "DOCUMENT" | "LINK";
+      label?: string;
+      url?: string;
+      fileName?: string;
+      mimeType?: string;
+      fileDataUrl?: string;
+    },
+  ) =>
+    apiFetch<TaskDeliverable>(`/projects/tasks/${taskId}/deliverables`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, token),
+  submitTaskDeliverable: (token: string, taskId: string, deliverableId: string) =>
+    apiFetch<TaskDeliverable>(`/projects/tasks/${taskId}/deliverables/${deliverableId}/submit`, { method: "POST" }, token),
+  approveTaskDeliverable: (token: string, taskId: string, deliverableId: string, reviewNote?: string) =>
+    apiFetch<TaskDeliverable>(`/projects/tasks/${taskId}/deliverables/${deliverableId}/approve`, {
+      method: "POST",
+      body: JSON.stringify({ reviewNote }),
+    }, token),
+  rejectTaskDeliverable: (token: string, taskId: string, deliverableId: string, reviewNote: string) =>
+    apiFetch<TaskDeliverable>(`/projects/tasks/${taskId}/deliverables/${deliverableId}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reviewNote }),
+    }, token),
+  shareTaskDeliverable: (token: string, taskId: string, deliverableId: string) =>
+    apiFetch<{
+      deliverable: TaskDeliverable;
+      message: string;
+      mailto?: string | null;
+      whatsapp: string;
+      publicUrl?: string | null;
+    }>(`/projects/tasks/${taskId}/deliverables/${deliverableId}/share`, { method: "POST" }, token),
+  getPendingDeliverables: (token: string) =>
+    apiFetch<TaskDeliverable[]>("/deliverables/pending-review", {}, token),
+  getPortalDeliverables: (portalToken: string) =>
+    apiFetch<TaskDeliverable[]>(`/portal/${portalToken}/deliverables`),
+  getPublicDeliverable: (token: string) =>
+    apiFetch<TaskDeliverable>(`/deliverables/public/${token}`),
+  submitDeliverableFeedback: (token: string, data: { feedback: string; approved?: boolean }) =>
+    apiFetch<{ message: string }>(`/deliverables/public/${token}/feedback`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   getInvoices: (token: string, params?: { documentType?: string; status?: string }) => {
     const qs = new URLSearchParams();
     if (params?.documentType) qs.set("documentType", params.documentType);

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ProjectStatus } from '@prisma/client';
+import { DeliverableStatus, ProjectStatus } from '@prisma/client';
 import {
   columnIndex,
   getFirstColumnKey,
@@ -279,8 +279,15 @@ export class ProjectsService {
     return column;
   }
 
-  private enforceDeliveryGates(
+  private async deliverableCount(taskId: string, statuses: DeliverableStatus[]) {
+    return this.prisma.taskDeliverable.count({
+      where: { taskId, status: { in: statuses } },
+    });
+  }
+
+  private async enforceDeliveryGates(
     task: {
+      id: string;
       boardColumn: string;
       revisionRound: number;
       qaSignedOffAt: Date | null;
@@ -298,6 +305,15 @@ export class ProjectsService {
       if (!task.qaSignedOffAt) {
         throw new BadRequestException(
           'Peer QA sign-off is required before moving a task to client review',
+        );
+      }
+      const shared = await this.deliverableCount(task.id, [
+        DeliverableStatus.SHARED,
+        DeliverableStatus.CLIENT_APPROVED,
+      ]);
+      if (shared === 0) {
+        throw new BadRequestException(
+          'Share at least one approved deliverable with the client before moving to client review',
         );
       }
       if (task.billableRevisionPending) {
@@ -351,6 +367,17 @@ export class ProjectsService {
 
     if (task.assigneeId && task.assigneeId === actorId) {
       throw new BadRequestException('QA sign-off must be done by someone other than the assignee');
+    }
+
+    const approved = await this.deliverableCount(taskId, [
+      DeliverableStatus.APPROVED,
+      DeliverableStatus.SHARED,
+      DeliverableStatus.CLIENT_APPROVED,
+    ]);
+    if (approved === 0) {
+      throw new BadRequestException(
+        'At least one manager-approved deliverable is required before QA sign-off',
+      );
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -505,7 +532,7 @@ export class ProjectsService {
 
     this.enforceGate(task.project, serviceLine, dto.boardColumn);
 
-    const deliveryPatch = this.enforceDeliveryGates(
+    const deliveryPatch = await this.enforceDeliveryGates(
       task,
       serviceLine,
       fromColumn,

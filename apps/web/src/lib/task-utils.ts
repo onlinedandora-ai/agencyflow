@@ -61,6 +61,14 @@ export function canManageTasks(role?: string | null) {
   return role === "ADMIN" || role === "CLIENT_MANAGER";
 }
 
+export function canReviewDeliverables(role?: string | null) {
+  return canManageTasks(role);
+}
+
+export function isDeliveryExec(role?: string | null) {
+  return role === "DELIVERY_EXEC";
+}
+
 export function formatSlaCountdown(sla?: TaskSla | null) {
   if (!sla || !sla.active) return null;
   if (sla.breached) {

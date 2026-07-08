@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Download, FileText, Upload } from "lucide-react";
+import { CheckCircle2, Download, ExternalLink, FileText, Upload } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -19,12 +19,13 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, cn, type AccessIntake, type BrandIntake, type OnboardingIntake } from "@/lib/api";
 
-type Tab = "onboarding" | "brand" | "access" | "billing";
+type Tab = "onboarding" | "brand" | "access" | "deliverables" | "billing";
 
 const TABS: { key: Tab; label: string; sop: string }[] = [
   { key: "onboarding", label: "Onboarding", sop: "Client Onboarding Form" },
   { key: "brand", label: "Brand & assets", sop: "Brand Asset Intake" },
   { key: "access", label: "Access & social", sop: "Access & Credentials" },
+  { key: "deliverables", label: "Deliverables", sop: "Work for your review" },
   { key: "billing", label: "Billing & payment", sop: "Invoice & payment" },
 ];
 
@@ -53,6 +54,12 @@ export default function ClientPortalPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["portal", token],
     queryFn: () => api.getClientPortal(token),
+  });
+
+  const { data: portalDeliverables = [] } = useQuery({
+    queryKey: ["portal-deliverables", token],
+    queryFn: () => api.getPortalDeliverables(token),
+    enabled: !!data,
   });
 
   useEffect(() => {
@@ -250,6 +257,42 @@ export default function ClientPortalPage() {
             <AccessIntakeForm data={access} onChange={setAccess} />
             {renderIntakeActions("access", access as unknown as Record<string, unknown>, data.intake.submitted.access)}
           </div>
+        </div>
+      )}
+
+      {tab === "deliverables" && (
+        <div className="glass-panel no-print p-6">
+          <h2 className="font-semibold">{TABS[3].sop}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Review and approve work shared by your agency team.
+          </p>
+          {portalDeliverables.length === 0 ? (
+            <p className="mt-6 text-sm text-muted-foreground">No deliverables shared yet.</p>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {portalDeliverables.map((d) => (
+                <div key={d.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white/40 p-4 text-sm">
+                  <div>
+                    <p className="font-medium">{d.label}</p>
+                    <p className="text-muted-foreground">{d.task?.title} · {d.task?.project?.name}</p>
+                    {d.status === "CLIENT_APPROVED" && (
+                      <p className="mt-1 text-xs text-green-700">Approved ✓</p>
+                    )}
+                  </div>
+                  {d.publicUrl && (
+                    <a
+                      href={d.publicUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={buttonVariants({ size: "sm" })}
+                    >
+                      <ExternalLink className="h-4 w-4" /> Review
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

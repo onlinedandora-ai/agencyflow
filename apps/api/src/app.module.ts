@@ -6,6 +6,7 @@ import { LeadsModule } from './leads/leads.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ClientPortalModule } from './client-portal/client-portal.module';
+import { DeliverablesModule } from './deliverables/deliverables.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ProjectsModule } from './projects/projects.module';
@@ -14,7 +15,7 @@ import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, LeadsModule, ProposalsModule, DiscoveryModule, OnboardingModule, ProjectsModule, InvoicesModule, ClientPortalModule, PaymentsModule, SettingsModule, UsersModule],
+  imports: [PrismaModule, AuthModule, LeadsModule, ProposalsModule, DiscoveryModule, OnboardingModule, ProjectsModule, DeliverablesModule, InvoicesModule, ClientPortalModule, PaymentsModule, SettingsModule, UsersModule],
   controllers: [HealthController],
 })
 export class AppModule {}

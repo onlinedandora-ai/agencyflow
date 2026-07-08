@@ -52,6 +52,20 @@ enum TaskStatus {
   BLOCKED
 }
 
+enum DeliverableType {
+  DOCUMENT
+  LINK
+}
+
+enum DeliverableStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  SHARED
+  CLIENT_APPROVED
+}
+
 enum InvoiceStatus {
   DRAFT
   SENT
@@ -127,6 +141,9 @@ model User {
   proposalSends ProposalSendLog[]
   milestoneNotifications PaymentMilestoneNotification[]
   reviewedPaymentClaims PaymentClaim[] @relation("PaymentClaimReviewer")
+  submittedDeliverables TaskDeliverable[] @relation("DeliverableSubmitter")
+  reviewedDeliverables  TaskDeliverable[] @relation("DeliverableReviewer")
+  sharedDeliverables    TaskDeliverable[] @relation("DeliverableSharer")
 }
 
 model Lead {
@@ -324,7 +341,41 @@ model Task {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
+  deliverables TaskDeliverable[]
+
   @@index([projectId, boardColumn])
+}
+
+model TaskDeliverable {
+  id               String            @id @default(cuid())
+  taskId           String
+  task             Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  type             DeliverableType
+  label            String?
+  url              String?
+  fileName         String?
+  mimeType         String?
+  fileDataUrl      String?           @db.Text
+  version          Int               @default(1)
+  status           DeliverableStatus @default(DRAFT)
+  submittedAt      DateTime?
+  submittedById    String?
+  submittedBy      User?             @relation("DeliverableSubmitter", fields: [submittedById], references: [id])
+  reviewedAt       DateTime?
+  reviewedById     String?
+  reviewedBy       User?             @relation("DeliverableReviewer", fields: [reviewedById], references: [id])
+  reviewNote       String?
+  sharedAt         DateTime?
+  sharedById       String?
+  sharedBy         User?             @relation("DeliverableSharer", fields: [sharedById], references: [id])
+  publicToken      String?           @unique
+  clientApprovedAt DateTime?
+  clientFeedback   String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([taskId])
+  @@index([status])
 }
 
 model Invoice {

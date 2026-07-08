@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
+import { ROLE_LABELS } from "@/lib/task-utils";
 import { Button } from "@/components/ui/button";
 
 const mainNavItems = [
@@ -117,6 +118,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div>
             <p className="text-sm text-muted-foreground">Signed in as</p>
             <p className="font-medium tracking-tight">{user?.name}</p>
+            {user?.role && (
+              <p className="text-xs text-muted-foreground">{ROLE_LABELS[user.role] || user.role}</p>
+            )}
           </div>
           <Button variant="outline" className="border-white/50 bg-white/40 backdrop-blur-md" onClick={clearAuth}>
             Sign out
