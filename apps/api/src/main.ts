@@ -7,14 +7,23 @@ import { AppModule } from './app.module';
 function sanitizeEnv(key: string) {
   const raw = process.env[key];
   if (raw == null) return;
-  const trimmed = raw.trim().replace(/^['"]|['"]$/g, '');
-  if (trimmed !== raw) process.env[key] = trimmed;
+  let v = raw.trim().replace(/[\u201C\u201D\u2018\u2019]/g, '"');
+  while (
+    (v.startsWith('"') && v.endsWith('"')) ||
+    (v.startsWith("'") && v.endsWith("'"))
+  ) {
+    v = v.slice(1, -1).trim();
+  }
+  const eq = v.indexOf('=');
+  if (eq > 0 && new RegExp(`^${key}$`, 'i').test(v.slice(0, eq).trim())) {
+    v = v.slice(eq + 1).trim();
+  }
+  process.env[key] = v;
 }
 
-sanitizeEnv('DATABASE_URL');
-sanitizeEnv('DIRECT_URL');
-sanitizeEnv('WEB_ORIGIN');
-sanitizeEnv('JWT_SECRET');
+for (const key of ['DATABASE_URL', 'DIRECT_URL', 'WEB_ORIGIN', 'JWT_SECRET']) {
+  sanitizeEnv(key);
+}
 
 async function bootstrap() {
   const databaseUrl = process.env.DATABASE_URL ?? '';
@@ -22,6 +31,16 @@ async function bootstrap() {
     console.error(
       'DATABASE_URL must start with postgresql:// (remove quotes if pasting into Render).',
     );
+    console.error(
+      `Got ${databaseUrl ? `prefix="${databaseUrl.slice(0, 24)}..."` : 'empty/missing value'}.`,
+    );
+    process.exit(1);
+  }
+
+  try {
+    console.log(`Prisma DB host: ${new URL(databaseUrl).host}`);
+  } catch {
+    console.error('DATABASE_URL is not a valid URL after sanitize.');
     process.exit(1);
   }
 
