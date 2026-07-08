@@ -16,6 +16,8 @@ type DemoTaskSeed = {
   description?: string;
   dueDate?: Date;
   customFields?: Record<string, string>;
+  qaSignedOffById?: string;
+  qaSignedOffAt?: Date;
 };
 
 async function ensureDemoTasks(projectId: string, tasks: DemoTaskSeed[], defaultAssigneeId: string) {
@@ -38,6 +40,8 @@ async function ensureDemoTasks(projectId: string, tasks: DemoTaskSeed[], default
         description: task.description,
         dueDate: task.dueDate,
         customFields: task.customFields,
+        qaSignedOffAt: task.qaSignedOffAt,
+        qaSignedOffById: task.qaSignedOffById,
       },
     });
   }
@@ -99,6 +103,22 @@ async function seedDemoProject(
 
   await ensureDemoTasks(project.id, tasks, defaultAssigneeId);
   return { workspace, project };
+}
+
+/** Tasks in client review must have peer QA sign-off (by someone other than assignee). */
+async function syncClientReviewQaSignoffs(managerId: string, execId: string) {
+  const clientReviewColumns = ['client_review', 'client_approval'];
+  const tasks = await prisma.task.findMany({
+    where: { boardColumn: { in: clientReviewColumns }, qaSignedOffAt: null },
+  });
+  const signedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  for (const task of tasks) {
+    const signerId = task.assigneeId === execId ? managerId : execId;
+    await prisma.task.update({
+      where: { id: task.id },
+      data: { qaSignedOffAt: signedAt, qaSignedOffById: signerId },
+    });
+  }
 }
 
 async function main() {
@@ -630,6 +650,8 @@ async function main() {
     create: { id: 'default', ...DEFAULT_AGENCY_PROFILE },
     update: {},
   });
+
+  await syncClientReviewQaSignoffs(manager.id, deliveryExec.id);
 
   console.log('Seed complete');
   console.log('Admin login: admin@agencyflow.com / demo123');

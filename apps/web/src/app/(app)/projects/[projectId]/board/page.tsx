@@ -188,7 +188,7 @@ export default function ProjectBoardPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "view">("view");
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
-  const [moveError, setMoveError] = useState<string | null>(null);
+  const [moveError, setMoveError] = useState<{ message: string; taskId?: string } | null>(null);
 
   const canManage = canManageTasks(user?.role);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -205,8 +205,8 @@ export default function ProjectBoardPage() {
       setMoveError(null);
       queryClient.invalidateQueries({ queryKey: ["project-board", projectId] });
     },
-    onError: (err: Error) => {
-      setMoveError(err.message);
+    onError: (err: Error, variables) => {
+      setMoveError({ message: err.message, taskId: variables.taskId });
       queryClient.invalidateQueries({ queryKey: ["project-board", projectId] });
     },
   });
@@ -241,6 +241,26 @@ export default function ProjectBoardPage() {
 
     const currentTask = board.columns.flatMap((col) => col.tasks).find((t) => t.id === taskId);
     if (!currentTask || currentTask.boardColumn === newColumn) return;
+
+    const targetColumn = board.columns.find((col) => col.key === newColumn);
+    if (targetColumn?.status === "CLIENT_REVIEW") {
+      if (!currentTask.qaSignedOffAt) {
+        setMoveError({
+          message:
+            "Peer QA sign-off is required before client review. Open the task and click “Sign off internal QA” (must be someone other than the assignee).",
+          taskId,
+        });
+        return;
+      }
+      if (currentTask.billableRevisionPending) {
+        setMoveError({
+          message:
+            "Revision round 3+ is billable — a manager must acknowledge before this task returns to client review.",
+          taskId,
+        });
+        return;
+      }
+    }
 
     queryClient.setQueryData<typeof board>(["project-board", projectId], (old) => {
       if (!old) return old;
@@ -334,7 +354,26 @@ export default function ProjectBoardPage() {
       {moveError && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{moveError}</AlertDescription>
+          <AlertTitle>Could not move task</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>{moveError.message}</p>
+            {moveError.taskId && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="border-destructive/30 bg-white/80"
+                onClick={() => {
+                  const task = board.columns
+                    .flatMap((col) => col.tasks)
+                    .find((t) => t.id === moveError.taskId);
+                  if (task) openTask(task);
+                }}
+              >
+                Open task
+              </Button>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 

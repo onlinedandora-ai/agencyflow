@@ -436,8 +436,16 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, token?: stri
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "Request failed");
+    const text = await response.text();
+    let message = text || "Request failed";
+    try {
+      const json = JSON.parse(text) as { message?: string | string[] };
+      if (Array.isArray(json.message)) message = json.message.join(", ");
+      else if (typeof json.message === "string") message = json.message;
+    } catch {
+      // plain text error body
+    }
+    throw new Error(message);
   }
 
   return response.json();
