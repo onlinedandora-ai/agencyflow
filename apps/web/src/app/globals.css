@@ -172,7 +172,15 @@ h3 {
   }
 
   .stack-card {
-    @apply w-full rounded-2xl border border-white/50 bg-white/60 p-4 shadow-xl shadow-black/[0.04] backdrop-blur-2xl;
+    @apply w-full rounded-2xl border border-white/50 bg-white/60 p-3 shadow-xl shadow-black/[0.04] backdrop-blur-2xl sm:p-4;
+  }
+
+  /* Project board: wrapping column grid (masonry-style, columns grow with content) */
+  .board-masonry {
+    @apply hidden gap-3 md:grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-auto-rows: auto;
+    align-items: start;
   }
 
   /* Zoho CRM–style stage chips: 2-column grid, wraps naturally */

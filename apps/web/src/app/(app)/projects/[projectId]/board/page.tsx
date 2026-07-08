@@ -82,12 +82,22 @@ function CompactTaskCard({
         <button
           type="button"
           onClick={() => onOpen(task)}
-          className="min-w-0 flex-1 px-3 py-3 text-left sm:px-2 sm:py-2.5"
+          className={cn(
+            "min-w-0 flex-1 text-left",
+            mobile ? "px-2.5 py-2.5" : "px-2 py-2.5",
+          )}
         >
           <div className="flex items-start gap-2">
             <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", priorityStyle.dot)} />
             <div className="min-w-0 flex-1">
-              <h3 className="line-clamp-2 text-sm font-medium leading-snug">{task.title}</h3>
+              <h3
+                className={cn(
+                  "line-clamp-2 font-medium leading-snug",
+                  mobile ? "text-xs" : "text-sm",
+                )}
+              >
+                {task.title}
+              </h3>
               <div className="mt-1 flex flex-wrap items-center gap-1">
                 <TaskSlaTimer sla={task.sla} compact />
                 {task.revisionRound > 0 && (
@@ -106,7 +116,7 @@ function CompactTaskCard({
         </button>
       </div>
       {mobile && columnOptions && onMoveColumn && (
-        <div className="border-t border-white/30 px-3 pb-3">
+        <div className="border-t border-white/30 px-2.5 pb-2.5">
           <MobileStageSelect
             value={task.boardColumn}
             label="Move to column"
@@ -168,7 +178,8 @@ function BoardColumn({
     <section
       ref={setNodeRef}
       className={cn(
-        "glass-panel flex min-h-[480px] min-w-[200px] flex-1 flex-col p-3 transition-colors",
+        "glass-panel flex min-w-0 flex-col p-3 transition-colors",
+        column.tasks.length === 0 && "min-h-[200px]",
         isOver && !isLockedColumn && "border-primary/40 bg-white/70",
         isLockedColumn && "opacity-60",
       )}
@@ -185,7 +196,7 @@ function BoardColumn({
           Locked until advance paid
         </p>
       )}
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+      <div className="flex flex-col gap-2">
         {column.tasks.map((task) => (
           <DraggableTaskCard
             key={task.id}
@@ -450,7 +461,7 @@ export default function ProjectBoardPage() {
       </div>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="hidden gap-3 md:flex">
+        <div className="board-masonry">
           {board.columns.map((column) => (
             <BoardColumn
               key={column.key}
@@ -465,7 +476,7 @@ export default function ProjectBoardPage() {
 
         <DragOverlay>
           {dragTask ? (
-            <div className="w-[200px] rotate-1 shadow-lg">
+            <div className="w-[min(200px,100%)] rotate-1 shadow-lg">
               <CompactTaskCard task={dragTask} doneColumnKey={doneColumnKey} onOpen={() => {}} />
             </div>
           ) : null}
