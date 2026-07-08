@@ -35,13 +35,13 @@ export default function ReportsPage() {
   const runs = data?.automation?.recentRuns ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Reports</h1>
+        <h1 className="page-title">Reports</h1>
         <p className="text-sm text-muted-foreground">Pipeline, revenue, delivery health, and automation activity</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-4">
         {[
           { label: "Active leads", value: pipeline?.total ?? "—", icon: TrendingUp },
           { label: "Win rate", value: pipeline ? `${pipeline.conversionRate}%` : "—", icon: TrendingUp },
@@ -53,7 +53,7 @@ export default function ReportsPage() {
               <p className="text-sm text-muted-foreground">{label}</p>
               <Icon className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="mt-2 text-2xl font-semibold">{value}</p>
+            <p className="stat-value">{value}</p>
           </div>
         ))}
       </div>
@@ -125,8 +125,27 @@ export default function ReportsPage() {
         {projects.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">No active projects.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm">
+          <>
+            <div className="mt-4 space-y-3 md:hidden">
+              {projects.map((p) => (
+                <div key={p.id} className="rounded-xl border border-white/40 bg-white/30 p-3 text-sm">
+                  <Link href={`/projects/${p.id}/board`} className="font-medium text-primary">
+                    {p.name}
+                  </Link>
+                  <p className="mt-1 text-muted-foreground">{p.client}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    <span>{p.progressPercent}% complete</span>
+                    <span>·</span>
+                    <span>{p.overdueCount} overdue</span>
+                    <span className={`rounded-full px-2 py-0.5 ${HEALTH_COLORS[p.health] || ""}`}>
+                      {p.health}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[520px] text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
                   <th className="pb-2 pr-4">Project</th>
@@ -156,7 +175,8 @@ export default function ReportsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </div>
 

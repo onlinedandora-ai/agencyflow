@@ -17,7 +17,7 @@ export default function ProposalsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Proposals</h1>
+        <h1 className="page-title">Proposals</h1>
         <p className="text-sm text-muted-foreground">6-section template with 300-word guardrail and 24h follow-up timer</p>
       </div>
 

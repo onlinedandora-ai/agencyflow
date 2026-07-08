@@ -56,7 +56,7 @@ export default function ClientsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Client Workspaces</h1>
+        <h1 className="page-title">Client Workspaces</h1>
         <p className="text-sm text-muted-foreground">
           SOP onboarding intake, brand assets, access &amp; bank-transfer payment validation
         </p>
@@ -160,8 +160,8 @@ export default function ClientsPage() {
                   isLocked ? "border-amber-200 bg-amber-50/30" : "border-[var(--color-border)]",
                 )}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <h2 className="text-lg font-semibold">{ws.name}</h2>
                     <p className="text-sm text-muted-foreground">{ws.company}</p>
                     {project && (
@@ -175,7 +175,7 @@ export default function ClientsPage() {
                       <IntakeBadge done={!!ws.accessIntakeAt} label="Access & social" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex shrink-0 items-center gap-2 text-sm">
                     {isLocked ? (
                       <>
                         <Lock className="h-4 w-4 text-amber-600" />

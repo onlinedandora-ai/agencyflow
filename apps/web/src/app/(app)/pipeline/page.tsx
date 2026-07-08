@@ -175,7 +175,7 @@ function PipelineColumn({
     <section
       ref={setNodeRef}
       className={cn(
-        "glass-panel flex min-h-[420px] min-w-0 flex-col p-3 transition-colors",
+        "glass-panel flex min-h-[300px] min-w-0 flex-col p-3 transition-colors sm:min-h-[420px]",
         isOver && "border-primary/40 bg-white/70",
       )}
     >
@@ -290,17 +290,17 @@ export default function PipelinePage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold">Lead Pipeline</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="page-header">
+        <div className="min-w-0">
+          <h1 className="page-title">Lead Pipeline</h1>
           <p className="text-sm text-muted-foreground">
             Drag leads between columns to update their stage
           </p>
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white"
+          className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white sm:w-auto"
         >
           <Plus className="h-4 w-4" />
           New lead
@@ -317,7 +317,7 @@ export default function PipelinePage() {
           ].map(([label, value]) => (
             <div key={label} className="glass-panel p-4">
               <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="mt-1 text-2xl font-semibold">{value}</p>
+              <p className="stat-value">{value}</p>
             </div>
           ))}
         </div>
@@ -329,7 +329,7 @@ export default function PipelinePage() {
             e.preventDefault();
             createMutation.mutate();
           }}
-          className="grid gap-3 glass-panel p-4 md:grid-cols-4"
+          className="grid gap-3 glass-panel p-4 sm:grid-cols-2 md:grid-cols-4"
         >
           <input
             placeholder="Name"
@@ -360,15 +360,16 @@ export default function PipelinePage() {
         <p className="text-sm text-muted-foreground">Loading pipeline...</p>
       ) : (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-8">
+          <div className="kanban-scroll lg:grid lg:grid-cols-4 lg:gap-3 lg:overflow-visible 2xl:grid-cols-8">
             {pipeline.map((column) => (
-              <PipelineColumn
-                key={column.stage}
-                stage={column.stage}
-                leads={column.leads}
-                onRespond={(id) => respondMutation.mutate(id)}
-                onConvert={(id) => convertMutation.mutate(id)}
-              />
+              <div key={column.stage} className="kanban-column">
+                <PipelineColumn
+                  stage={column.stage}
+                  leads={column.leads}
+                  onRespond={(id) => respondMutation.mutate(id)}
+                  onConvert={(id) => convertMutation.mutate(id)}
+                />
+              </div>
             ))}
           </div>
 

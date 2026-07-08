@@ -274,7 +274,7 @@ function DeliverableRow({
             <Button type="button" size="sm" onClick={onApprove}>
               <CheckCircle2 className="h-3.5 w-3.5" /> Approve
             </Button>
-            <Input className="h-8 max-w-[180px] text-xs" placeholder="Rejection reason" value={rejectNote} onChange={(e) => onRejectNoteChange(e.target.value)} />
+            <Input className="h-8 w-full min-w-0 text-xs sm:max-w-[180px]" placeholder="Rejection reason" value={rejectNote} onChange={(e) => onRejectNoteChange(e.target.value)} />
             <Button type="button" size="sm" variant="outline" onClick={onReject} disabled={!rejectNote.trim()}>
               <XCircle className="h-3.5 w-3.5" /> Reject
             </Button>

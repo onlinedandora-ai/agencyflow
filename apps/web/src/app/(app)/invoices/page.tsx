@@ -145,7 +145,7 @@ export default function InvoicesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold">Invoices</h1>
+          <h1 className="page-title">Invoices</h1>
           <p className="text-sm text-muted-foreground">
             Draft invoices, tax invoices, and payment receipts — all in one place
           </p>

@@ -299,7 +299,7 @@ export default function ProjectBoardPage() {
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold">{board.projectName}</h1>
+            <h1 className="text-xl font-semibold sm:text-2xl">{board.projectName}</h1>
             <Badge variant="secondary" className={healthStyle.bg}>
               {healthStyle.label}
             </Badge>

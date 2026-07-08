@@ -28,7 +28,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Agency Dashboard</h1>
+        <h1 className="page-title">Agency Dashboard</h1>
         <p className="text-sm text-muted-foreground">
           {roleLabel} view — pipeline, delivery queue, and workspace health
         </p>
@@ -45,7 +45,7 @@ export default function DashboardPage() {
         ].map(([label, value]) => (
           <div key={label} className="glass-panel p-5">
             <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="mt-2 text-3xl font-semibold">{value}</p>
+            <p className="stat-value">{value}</p>
           </div>
         ))}
       </div>

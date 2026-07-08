@@ -257,7 +257,7 @@ export function TaskDetailDrawer({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="task-priority">Urgency</Label>
                   <select
@@ -418,7 +418,7 @@ export function TaskDetailDrawer({
                   </Card>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <InfoCard icon={AlertCircle} label="Urgency" value={PRIORITY_LABELS[priority]} />
                   <InfoCard
                     icon={Calendar}

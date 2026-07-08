@@ -22,7 +22,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Projects</h1>
+        <h1 className="page-title">Projects</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           One confirmed project, many tasks — managers define work, assign owners, and set urgency.
           The board stays scannable; click any card for full details.
