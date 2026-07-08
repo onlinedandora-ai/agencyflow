@@ -26,10 +26,25 @@ git push origin main
 
 Do **not** set `PORT` manually — Render assigns it automatically.
 
-**Common mistake:** pasting `"postgresql://..."` with quotes breaks the URL. Paste the raw URL only (no surrounding `"` or `'`).
+**Common mistakes:**
 
-4. Wait for deploy → test your **real** Render URL (dashboard → agencyflow-api → copy URL), e.g.  
-   `https://agencyflow-api-xxxx.onrender.com/health`
+- Pasting `"postgresql://..."` with quotes — paste the raw URL only (no surrounding `"` or `'`).
+- Password contains `?`, `@`, `#`, `%`, or `&` — those must be **URL-encoded** in the connection string (e.g. `?` → `%3F`). Otherwise Prisma truncates the password and you get `P1000 Authentication failed`.
+
+Encode before pasting into Render (run locally):
+
+```bash
+python3 - <<'PY'
+from urllib.parse import quote
+password = input('DB password: ').rstrip('\n')
+print(quote(password, safe=''))
+PY
+```
+
+Then use the encoded string as the password segment in both URLs.
+
+4. Wait for deploy → test your **real** Render URL (dashboard → agencyflow-api → copy URL):  
+   `https://agencyflow-api-yrzo.onrender.com/health`
 
 ## 3. Deploy web on Vercel
 
