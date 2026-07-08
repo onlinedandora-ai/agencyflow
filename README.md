@@ -10,24 +10,26 @@ See [prd.md](./prd.md) for the full product requirements document.
 |-------|------|
 | Frontend | Next.js 16, TypeScript, Tailwind CSS, TanStack Query |
 | Backend | NestJS, Prisma, PostgreSQL |
-| Cache/Queue | Redis (ready for BullMQ automation engine) |
+| Database | **Supabase** (hosted Postgres, Mumbai region) |
+| Cache/Queue | Redis via Docker locally (ready for BullMQ) |
 
 ## Quick start
 
-### 1. Start database
+### Option A — Supabase (recommended)
+
+1. Copy env file and add your database password from the [Supabase dashboard](https://supabase.com/dashboard/project/pnxudresswwniockqwvj/settings/database):
 
 ```bash
-npm run db:up
+cp apps/api/.env.example apps/api/.env
 ```
 
-### 2. Migrate & seed
+2. Seed demo data (first time only):
 
 ```bash
-npm run db:migrate
 npm run db:seed
 ```
 
-### 3. Run dev servers
+3. Run dev servers:
 
 ```bash
 npm run dev
@@ -35,6 +37,18 @@ npm run dev
 
 - Web: http://localhost:3000
 - API: http://localhost:3001
+- Supabase dashboard: https://supabase.com/dashboard/project/pnxudresswwniockqwvj
+
+### Option B — Local Docker Postgres
+
+```bash
+npm run db:up
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+Set both `DATABASE_URL` and `DIRECT_URL` to `postgresql://agencyflow:agencyflow@localhost:5433/agencyflow?schema=public` in `apps/api/.env`.
 
 ## Demo logins
 
@@ -42,6 +56,7 @@ npm run dev
 |------|-------|----------|
 | Admin | admin@agencyflow.com | demo123 |
 | Client Manager | manager@agencyflow.com | demo123 |
+| Delivery Exec | exec@agencyflow.com | demo123 |
 
 ## MVP progress (Phase 1 started)
 
