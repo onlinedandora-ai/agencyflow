@@ -462,7 +462,7 @@ export class ProposalsService {
       },
     });
 
-    const workspace = await this.onboardingService.convertLead(leadId);
+    const { workspace } = await this.onboardingService.convertLead(leadId);
     const project = workspace.projects[0];
     if (!project) throw new BadRequestException('Failed to create project');
 
