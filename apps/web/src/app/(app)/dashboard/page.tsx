@@ -42,7 +42,8 @@ export default function DashboardPage() {
           <li className="text-green-600">✓ Client onboarding + advance-payment gate</li>
           <li className="text-green-600">✓ Task boards by service line (Kanban + gate)</li>
           <li className="text-green-600">✓ Delivery QA gate + revision round tracking</li>
-          <li>○ Razorpay online payments</li>
+          <li className="text-green-600">✓ Client portal — SOP intake forms (onboarding, brand, access)</li>
+          <li className="text-green-600">✓ Razorpay online payments + bank transfer fallback</li>
           <li>○ Workflow automation engine (BullMQ)</li>
           <li>○ Reports &amp; Settings pages</li>
         </ul>

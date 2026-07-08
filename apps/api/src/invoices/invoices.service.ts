@@ -192,7 +192,7 @@ export class InvoicesService {
     const clientName = workspace.name;
     const clientEmail = workspace.email || invoice.proposal?.lead?.email;
     const billingUrl = workspace.billingToken
-      ? `${WEB_ORIGIN}/billing/${workspace.billingToken}`
+      ? `${WEB_ORIGIN}/portal/${workspace.billingToken}`
       : null;
     const amount = Number(milestone.amount).toLocaleString('en-IN');
     const dueLine = milestone.dueDate
@@ -306,7 +306,7 @@ export class InvoicesService {
     },
   >(invoice: T) {
     const billingUrl = invoice.workspace.billingToken
-      ? `${WEB_ORIGIN}/billing/${invoice.workspace.billingToken}`
+      ? `${WEB_ORIGIN}/portal/${invoice.workspace.billingToken}`
       : null;
     const publicUrl = invoice.publicToken
       ? `${WEB_ORIGIN}/billing/doc/${invoice.publicToken}`

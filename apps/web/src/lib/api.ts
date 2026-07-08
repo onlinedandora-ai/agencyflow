@@ -154,6 +154,9 @@ export type ClientWorkspace = {
   leadId?: string | null;
   billingToken?: string | null;
   billingFlow?: string | null;
+  onboardingIntakeAt?: string | null;
+  brandIntakeAt?: string | null;
+  accessIntakeAt?: string | null;
   projects: Array<{
     id: string;
     name: string;
@@ -162,6 +165,87 @@ export type ClientWorkspace = {
     invoices: Array<{ id: string; number: string; amount: string; status: string; isAdvance: boolean }>;
   }>;
   invoices: Array<{ id: string; number: string; amount: string; status: string; isAdvance: boolean }>;
+};
+
+export type OnboardingIntake = {
+  company: {
+    legalName: string;
+    brandName: string;
+    industry: string;
+    gstin: string;
+    pan: string;
+    address: string;
+    websiteSocials: string;
+  };
+  primaryContact: { name: string; designation: string; phone: string; email: string };
+  billingContact: { name: string; email: string; address: string; preferredPaymentMode: string };
+  decisionMakers: Array<{ name: string; role: string; approvalArea: string }>;
+  waysOfWorking: { preferredChannel: string; reportingCadence: string; workingHours: string; notes: string };
+};
+
+export type BrandIntake = {
+  assets: Array<{ asset: string; provided: string; link: string }>;
+  brandVoice: { tone: string; standsFor: string; audience: string; competitors: string };
+  dosDonts: Array<{ do: string; dont: string }>;
+  delivery: { sharedDriveLink: string; contactForAssets: string };
+};
+
+export type AccessIntake = {
+  platforms: Array<{ platform: string; handle: string; accessLevel: string; grantedTo: string; status: string }>;
+  notes: { passwordManager: string; revokeDate: string };
+};
+
+export type ClientPortal = {
+  workspace: { id: string; name: string; company?: string | null; billingFlow: string };
+  agency: AgencyProfile;
+  intake: {
+    onboarding: OnboardingIntake;
+    brand: BrandIntake;
+    access: AccessIntake;
+    submitted: { onboarding: boolean; brand: boolean; access: boolean };
+    submittedAt: { onboarding?: string | null; brand?: string | null; access?: string | null };
+  };
+  billing: BillingPortal;
+  payableInvoices: Array<{
+    id: string;
+    number: string;
+    amountDue: number;
+    status: string;
+    milestones: PaymentMilestone[];
+  }>;
+  paymentClaims: Array<{
+    id: string;
+    invoiceNumber: string;
+    milestoneLabel?: string | null;
+    amount: number;
+    paymentMode: string;
+    paymentReference?: string | null;
+    status: string;
+    submittedAt: string;
+    submittedByName: string;
+    reviewNote?: string | null;
+  }>;
+  steps: Array<{ key: string; label: string; done: boolean }>;
+  razorpay: { enabled: boolean; keyId?: string };
+};
+
+export type PaymentClaim = {
+  id: string;
+  invoiceId: string;
+  amount: string | number;
+  paymentMode: string;
+  paymentReference?: string | null;
+  proofDataUrl?: string | null;
+  proofNote?: string | null;
+  submittedByName: string;
+  submittedByEmail?: string | null;
+  status: string;
+  submittedAt: string;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  invoice: { number: string; workspace: { id: string; name: string; company?: string | null } };
+  milestone?: { label: string } | null;
+  reviewedBy?: { name: string } | null;
 };
 
 export type TaskSla = {
@@ -494,6 +578,73 @@ export const api = {
     ),
   getBillingPortal: (billingToken: string) =>
     apiFetch<BillingPortal>(`/billing/${billingToken}`),
+  getClientPortal: (token: string) => apiFetch<ClientPortal>(`/portal/${token}`),
+  savePortalIntake: (token: string, section: string, data: Record<string, unknown>) =>
+    apiFetch(`/portal/${token}/intake/${section}`, {
+      method: "PUT",
+      body: JSON.stringify({ data }),
+    }),
+  submitPortalIntake: (token: string, section: string, data: Record<string, unknown>) =>
+    apiFetch<{ message: string }>(`/portal/${token}/intake/${section}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ data }),
+    }),
+  submitPaymentClaim: (
+    token: string,
+    data: {
+      invoiceId: string;
+      milestoneId?: string;
+      amount: number;
+      paymentMode: string;
+      paymentReference?: string;
+      submittedByName: string;
+      submittedByEmail?: string;
+      proofNote?: string;
+      proofDataUrl?: string;
+    },
+  ) =>
+    apiFetch<{ message: string; claimId: string }>(`/portal/${token}/payment-claim`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getPaymentClaims: (token: string, status?: string) => {
+    const qs = status ? `?status=${status}` : "";
+    return apiFetch<PaymentClaim[]>(`/payment-claims${qs}`, {}, token);
+  },
+  approvePaymentClaim: (token: string, claimId: string, reviewNote?: string) =>
+    apiFetch(`/payment-claims/${claimId}/approve`, {
+      method: "POST",
+      body: JSON.stringify({ reviewNote }),
+    }, token),
+  rejectPaymentClaim: (token: string, claimId: string, reviewNote: string) =>
+    apiFetch(`/payment-claims/${claimId}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reviewNote }),
+    }, token),
+  createRazorpayOrder: (
+    portalToken: string,
+    data: { invoiceId: string; milestoneId?: string; payerName: string; payerEmail?: string },
+  ) =>
+    apiFetch<{
+      orderId: string;
+      amount: number;
+      currency: string;
+      keyId: string;
+      invoiceNumber: string;
+      milestoneLabel?: string | null;
+      prefill: { name: string; email?: string };
+    }>(`/portal/${portalToken}/razorpay/create-order`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  verifyRazorpayPayment: (
+    portalToken: string,
+    data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string },
+  ) =>
+    apiFetch<{ message: string; alreadyPaid?: boolean }>(`/portal/${portalToken}/razorpay/verify`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   requestTaxInvoice: (
     billingToken: string,
     data: { requestedByName: string; requestedByEmail?: string },

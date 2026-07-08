@@ -478,7 +478,7 @@ export class ProposalsService {
 
     const refreshed = await this.onboardingService.getWorkspace(workspace.id);
     const billingUrl = refreshed.billingToken
-      ? `${WEB_ORIGIN}/billing/${refreshed.billingToken}`
+      ? `${WEB_ORIGIN}/portal/${refreshed.billingToken}`
       : null;
 
     const flowMessage =
