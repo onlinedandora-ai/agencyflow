@@ -27,8 +27,17 @@ export default function LoginPage() {
       const result = await api.login(email, password);
       setAuth(result.accessToken, result.user);
       router.push("/pipeline");
-    } catch {
-      setError("Invalid email or password");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sign-in failed";
+      if (message === "Failed to fetch" || message.includes("NetworkError")) {
+        setError(
+          "Cannot reach the API. For local dev, run npm run dev:api. On production, wait ~30s for the API to wake up and try again.",
+        );
+      } else if (message.toLowerCase().includes("invalid credentials")) {
+        setError("Invalid email or password");
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }

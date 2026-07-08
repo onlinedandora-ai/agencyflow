@@ -1,22 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 
 export default function HomePage() {
   const router = useRouter();
   const token = useAuthStore((s) => s.token);
-  const [ready, setReady] = useState(false);
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   useEffect(() => {
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
+    if (!hasHydrated) return;
     router.replace(token ? "/pipeline" : "/login");
-  }, [ready, token, router]);
+  }, [hasHydrated, token, router]);
 
   return (
     <div className="mesh-page flex min-h-screen items-center justify-center">

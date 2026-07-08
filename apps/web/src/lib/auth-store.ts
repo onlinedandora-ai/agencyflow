@@ -7,6 +7,7 @@ import type { User } from "./api";
 type AuthState = {
   token: string | null;
   user: User | null;
+  _hasHydrated: boolean;
   setAuth: (token: string, user: User) => void;
   clearAuth: () => void;
 };
@@ -16,9 +17,16 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
+      _hasHydrated: false,
       setAuth: (token, user) => set({ token, user }),
       clearAuth: () => set({ token: null, user: null }),
     }),
-    { name: "agencyflow-auth" },
+    {
+      name: "agencyflow-auth",
+      partialize: (state) => ({ token: state.token, user: state.user }),
+      onRehydrateStorage: () => () => {
+        useAuthStore.setState({ _hasHydrated: true });
+      },
+    },
   ),
 );

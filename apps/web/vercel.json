@@ -2,5 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "cd ../.. && npm install --include=optional",
   "buildCommand": "cd ../.. && npm run build --workspace=apps/web",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://agencyflow-api-yrzo.onrender.com"
+  }
 }
