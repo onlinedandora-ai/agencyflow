@@ -1,0 +1,23 @@
+{
+  "name": "agencyflow",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run start:dev --workspace=apps/api",
+    "build": "npm run build --workspace=apps/api && npm run build --workspace=apps/web",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run prisma:migrate --workspace=apps/api",
+    "db:seed": "npm run prisma:seed --workspace=apps/api",
+    "db:studio": "npm run prisma:studio --workspace=apps/api",
+    "prototype": "npx --yes http-server prototype -p 8000 -c-1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

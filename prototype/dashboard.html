@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — AgencyFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">AgencyFlow</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active">Dashboard</a>
+        <a href="#" class="nav-item">Analytics</a>
+        <a href="#" class="nav-item">Projects</a>
+        <a href="#" class="nav-item">Settings</a>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="subtitle">Overview of your workspace activity</p>
+        </div>
+        <div class="user-menu">
+          <div class="user-info">
+            <span class="user-name" id="user-name">Demo User</span>
+            <span class="user-email" id="user-email">demo@agencyflow.com</span>
+          </div>
+          <button class="btn-logout" id="logout-btn">Sign out</button>
+        </div>
+      </header>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-label">Total Views</span>
+          <span class="stat-value" data-target="24850">0</span>
+          <span class="stat-change positive">+12.4%</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Active Users</span>
+          <span class="stat-value" data-target="1842">0</span>
+          <span class="stat-change positive">+8.1%</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Conversion Rate</span>
+          <span class="stat-value" data-target="3.7" data-suffix="%">0</span>
+          <span class="stat-change positive">+0.3%</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Revenue</span>
+          <span class="stat-value" data-target="48200" data-prefix="$">0</span>
+          <span class="stat-change negative">-2.1%</span>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <article class="panel chart-panel">
+          <div class="panel-header">
+            <h2>Traffic Overview</h2>
+            <span class="panel-meta">Last 7 days</span>
+          </div>
+          <canvas id="traffic-chart" height="220"></canvas>
+        </article>
+
+        <article class="panel activity-panel">
+          <div class="panel-header">
+            <h2>Recent Activity</h2>
+            <span class="panel-meta">Live feed</span>
+          </div>
+          <ul class="activity-list" id="activity-list"></ul>
+        </article>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="dashboard.js"></script>
+</body>
+</html>

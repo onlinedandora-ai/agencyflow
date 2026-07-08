@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — AgencyFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="brand-panel">
+      <div class="brand-content">
+        <div class="logo">AgencyFlow</div>
+        <p class="tagline">End-to-end agency operations, SOP-encoded.</p>
+        <ul class="features">
+          <li>Project dashboards</li>
+          <li>Team activity tracking</li>
+          <li>Secure workspace access</li>
+        </ul>
+      </div>
+    </div>
+
+    <main class="auth-panel">
+      <div class="auth-card">
+        <header class="auth-header">
+          <h1>Welcome back</h1>
+          <p>Sign in to your AgencyFlow account</p>
+        </header>
+
+        <form id="signin-form" novalidate>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email" required>
+            <span class="field-error" id="email-error"></span>
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+            <span class="field-error" id="password-error"></span>
+          </div>
+
+          <div class="form-row">
+            <label class="checkbox">
+              <input type="checkbox" id="remember" name="remember">
+              <span>Remember me</span>
+            </label>
+            <button type="button" class="link-btn" id="forgot-btn">Forgot password?</button>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submit-btn">
+            <span class="btn-text">Sign in</span>
+            <span class="btn-spinner" hidden></span>
+          </button>
+        </form>
+
+        <p class="demo-hint">Demo: <code>demo@agencyflow.com</code> / <code>demo123</code></p>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="script.js"></script>
+</body>
+</html>

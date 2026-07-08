@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@import "./proposal-print.css";
+
+:root {
+  --color-primary: #4f46e5;
+  --color-accent: #06b6d4;
+  --color-ink: #0b1020;
+  --color-surface: #ffffff;
+  --color-bg: #f7f8fa;
+  --color-border: #e5e7eb;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+  --color-muted: #6b7280;
+}
+
+@theme inline {
+  --font-sans: var(--font-poppins);
+  --font-heading: var(--font-fraunces);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-fraunces), Georgia, serif;
+}

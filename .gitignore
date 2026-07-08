@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# build outputs
+apps/web/.next/
+apps/web/out/
+apps/api/dist/
+apps/api/generated/
+
+# logs & OS
+*.log
+.DS_Store
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# prisma
+apps/api/node_modules/.prisma/

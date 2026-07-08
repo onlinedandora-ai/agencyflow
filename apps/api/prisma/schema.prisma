@@ -1,0 +1,381 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CLIENT_MANAGER
+  DELIVERY_EXEC
+  CLIENT
+  VENDOR
+}
+
+enum LeadStage {
+  NEW
+  CONTACTED
+  DISCOVERY_SCHEDULED
+  PROPOSAL_SENT
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+  NURTURE
+}
+
+enum LeadSource {
+  REFERRAL
+  WEB_FORM
+  WHATSAPP
+  MANUAL
+  OTHER
+}
+
+enum ProjectStatus {
+  AWAITING_ADVANCE
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  INTERNAL_QA
+  CLIENT_REVIEW
+  APPROVED
+  BLOCKED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  REQUESTED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum InvoiceDocumentType {
+  DRAFT
+  TAX
+  RECEIPT
+}
+
+enum BillingFlow {
+  DIRECT
+  DRAFT_FIRST
+}
+
+enum PaymentMode {
+  ONLINE
+  OFFLINE
+  BANK_TRANSFER
+  UPI
+}
+
+enum MilestoneStatus {
+  PENDING
+  PAID
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  REVISION_REQUESTED
+  ACCEPTED
+  DECLINED
+}
+
+enum RevisionRequestStatus {
+  PENDING
+  IN_PROGRESS
+  ADDRESSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignedLeads Lead[] @relation("LeadAssignee")
+  assignedTasks Task[] @relation("TaskAssignee")
+  auditLogs     AuditLog[]
+  proposalSends ProposalSendLog[]
+  milestoneNotifications PaymentMilestoneNotification[]
+}
+
+model Lead {
+  id              String     @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  company         String?
+  source          LeadSource @default(MANUAL)
+  stage           LeadStage  @default(NEW)
+  notes           String?
+  assigneeId      String?
+  assignee        User?      @relation("LeadAssignee", fields: [assigneeId], references: [id])
+  firstResponseAt DateTime?
+  slaBreached     Boolean    @default(false)
+  nurtureAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  stageChangedAt  DateTime   @default(now())
+
+  discovery DiscoveryCall?
+  proposal  Proposal?
+}
+
+model DiscoveryCall {
+  id            String    @id @default(cuid())
+  leadId        String    @unique
+  lead          Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  scheduledAt   DateTime?
+  completedAt   DateTime?
+  researchNotes String?
+  answers       Json?
+  callNotes     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Proposal {
+  id                 String         @id @default(cuid())
+  leadId             String         @unique
+  lead               Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  proposalNumber     String?        @unique
+  situation          String?
+  recommendation     String?
+  deliverables       String?
+  timeline           String?
+  investment         String?
+  nextStep           String?
+  termsAndConditions String?        @db.Text
+  wordCount          Int            @default(0)
+  status             ProposalStatus @default(DRAFT)
+  currentVersion     Int            @default(0)
+  billingFlow        BillingFlow    @default(DIRECT)
+  caseStudyId        String?
+  caseStudy          CaseStudy?     @relation(fields: [caseStudyId], references: [id])
+  publicToken        String?        @unique
+  sentAt             DateTime?
+  acceptedAt         DateTime?
+  acceptedByName     String?
+  acceptedByEmail    String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  sendLogs           ProposalSendLog[]
+  revisionRequests   ProposalRevisionRequest[]
+  invoices           Invoice[]
+}
+
+model ProposalSendLog {
+  id           String   @id @default(cuid())
+  proposalId   String
+  proposal     Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  version      Int
+  sentAt       DateTime @default(now())
+  sentById     String?
+  sentBy       User?    @relation(fields: [sentById], references: [id])
+  isResend     Boolean  @default(false)
+  publicUrl    String?
+  internalNote String?
+  snapshot     Json?
+
+  @@index([proposalId])
+}
+
+model ProposalRevisionRequest {
+  id                 String                @id @default(cuid())
+  proposalId         String
+  proposal           Proposal              @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  versionAtRequest   Int
+  requestedAt        DateTime              @default(now())
+  requestedByName    String
+  requestedByEmail   String?
+  comments           String                @db.Text
+  status             RevisionRequestStatus @default(PENDING)
+  addressedAt        DateTime?
+  addressedInVersion Int?
+
+  @@index([proposalId])
+}
+
+model AgencyProfile {
+  id                      String   @id @default("default")
+  name                    String
+  tagline                 String?
+  address                 String?
+  city                    String?
+  email                   String?
+  phone                   String?
+  website                 String?
+  gstin                   String?
+  bankName                String?
+  bankAccount             String?
+  bankIfsc                String?
+  defaultTermsAndConditions String? @db.Text
+  draftInvoicePrefix      String   @default("DRF")
+  draftInvoiceNextSeq     Int      @default(1)
+  taxInvoicePrefix        String   @default("INV")
+  taxInvoiceNextSeq       Int      @default(1)
+  receiptPrefix           String   @default("RCT")
+  receiptNextSeq          Int      @default(1)
+  updatedAt               DateTime @updatedAt
+}
+
+model CaseStudy {
+  id          String     @id @default(cuid())
+  title       String
+  clientName  String
+  serviceLine String
+  summary     String
+  outcome     String?
+  createdAt   DateTime   @default(now())
+  proposals   Proposal[]
+}
+
+model ClientWorkspace {
+  id           String       @id @default(cuid())
+  name         String
+  company      String?
+  email        String?
+  phone        String?
+  serviceLine  String?
+  leadId       String?      @unique
+  billingToken String?      @unique
+  billingFlow  BillingFlow  @default(DIRECT)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  projects Project[]
+  invoices Invoice[]
+}
+
+model Project {
+  id                   String          @id @default(cuid())
+  workspaceId          String
+  workspace            ClientWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name                 String
+  status               ProjectStatus   @default(AWAITING_ADVANCE)
+  advancePaidAt        DateTime?
+  requirementsFrozenAt DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  tasks    Task[]
+  invoices Invoice[]
+}
+
+model Task {
+  id              String     @id @default(cuid())
+  projectId       String
+  project         Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  status          TaskStatus @default(TODO)
+  boardColumn     String     @default("brief")
+  sortOrder       Int        @default(0)
+  priority        String?
+  dueDate         DateTime?
+  assigneeId      String?
+  assignee        User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  customFields    Json?
+  revisionRound   Int        @default(0)
+  isBlockedByGate Boolean    @default(false)
+  gateReason      String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([projectId, boardColumn])
+}
+
+model Invoice {
+  id               String               @id @default(cuid())
+  workspaceId      String
+  workspace        ClientWorkspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectId        String?
+  project          Project?             @relation(fields: [projectId], references: [id])
+  proposalId       String?
+  proposal         Proposal?            @relation(fields: [proposalId], references: [id])
+  number           String               @unique
+  documentType     InvoiceDocumentType  @default(TAX)
+  amount           Decimal              @db.Decimal(12, 2)
+  description      String?
+  lineItems        Json?
+  status           InvoiceStatus        @default(DRAFT)
+  dueDate          DateTime?
+  sentAt           DateTime?
+  paidAt           DateTime?
+  isAdvance        Boolean              @default(false)
+  publicToken      String?              @unique
+  requestedAt      DateTime?
+  requestedByName  String?
+  requestedByEmail String?
+  paymentMode      PaymentMode?
+  paymentReference String?
+  relatedInvoiceId String?
+  relatedInvoice   Invoice?             @relation("InvoiceReceipt", fields: [relatedInvoiceId], references: [id])
+  receipts           Invoice[]            @relation("InvoiceReceipt")
+  paymentMilestones  PaymentMilestone[]
+  milestoneLink      PaymentMilestone?    @relation("MilestoneReceipt")
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@index([workspaceId])
+  @@index([proposalId])
+}
+
+model PaymentMilestone {
+  id        String          @id @default(cuid())
+  invoiceId String
+  invoice   Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  label     String
+  amount    Decimal         @db.Decimal(12, 2)
+  dueDate   DateTime?
+  sortOrder Int             @default(0)
+  status    MilestoneStatus @default(PENDING)
+  paidAt    DateTime?
+  receiptId String?         @unique
+  receipt   Invoice?        @relation("MilestoneReceipt", fields: [receiptId], references: [id])
+  notifications PaymentMilestoneNotification[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([invoiceId])
+}
+
+model PaymentMilestoneNotification {
+  id           String           @id @default(cuid())
+  milestoneId  String
+  milestone    PaymentMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  sentAt       DateTime         @default(now())
+  sentById     String?
+  sentBy       User?            @relation(fields: [sentById], references: [id])
+  message      String           @db.Text
+  internalNote String?
+
+  @@index([milestoneId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  entityType String
+  entityId   String
+  action     String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}
