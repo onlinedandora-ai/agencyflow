@@ -33,6 +33,7 @@ import {
   type ProjectHealth,
 } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
+import { MobileStageSelect, StageChipBar } from "@/components/mobile-stage-picker";
 
 function CompactTaskCard({
   task,
@@ -40,12 +41,18 @@ function CompactTaskCard({
   isDragging,
   onOpen,
   dragHandleProps,
+  mobile = false,
+  columnOptions,
+  onMoveColumn,
 }: {
   task: TaskItem;
   doneColumnKey: string;
   isDragging?: boolean;
   onOpen: (task: TaskItem) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  mobile?: boolean;
+  columnOptions?: Array<{ id: string; label: string }>;
+  onMoveColumn?: (taskId: string, columnKey: string) => void;
 }) {
   const priority = normalizePriority(task.priority);
   const priorityStyle = PRIORITY_STYLES[priority];
@@ -53,7 +60,8 @@ function CompactTaskCard({
   return (
     <article
       className={cn(
-        "glass-panel overflow-hidden p-0 transition hover:border-primary/30",
+        mobile ? "stack-card overflow-hidden p-0" : "glass-panel overflow-hidden p-0",
+        "transition hover:border-primary/30",
         isDragging && "opacity-50 ring-2 ring-primary",
         task.isBlockedByGate && "border-amber-200/70",
         task.sla?.breached && "border-destructive/40",
@@ -61,18 +69,20 @@ function CompactTaskCard({
     >
       <div className={cn("h-1", priorityStyle.bar)} />
       <div className="flex items-stretch">
-        <button
-          type="button"
-          className="flex cursor-grab items-center px-1.5 text-muted-foreground active:cursor-grabbing"
-          aria-label="Drag task"
-          {...dragHandleProps}
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        {!mobile && (
+          <button
+            type="button"
+            className="flex cursor-grab items-center px-1.5 text-muted-foreground active:cursor-grabbing"
+            aria-label="Drag task"
+            {...dragHandleProps}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onOpen(task)}
-          className="min-w-0 flex-1 px-2 py-2.5 text-left"
+          className="min-w-0 flex-1 px-3 py-3 text-left sm:px-2 sm:py-2.5"
         >
           <div className="flex items-start gap-2">
             <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", priorityStyle.dot)} />
@@ -95,6 +105,16 @@ function CompactTaskCard({
           </div>
         </button>
       </div>
+      {mobile && columnOptions && onMoveColumn && (
+        <div className="border-t border-white/30 px-3 pb-3">
+          <MobileStageSelect
+            value={task.boardColumn}
+            label="Move to column"
+            options={columnOptions}
+            onChange={(columnKey) => onMoveColumn(task.id, columnKey)}
+          />
+        </div>
+      )}
     </article>
   );
 }
@@ -189,6 +209,7 @@ export default function ProjectBoardPage() {
   const [drawerMode, setDrawerMode] = useState<"create" | "view">("view");
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
   const [moveError, setMoveError] = useState<{ message: string; taskId?: string } | null>(null);
+  const [mobileColumn, setMobileColumn] = useState<string | null>(null);
 
   const canManage = canManageTasks(user?.role);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -234,8 +255,12 @@ export default function ProjectBoardPage() {
     const taskId = String(event.active.id);
     const overId = event.over?.id;
     if (!overId || !board) return;
+    moveTaskToColumn(taskId, String(overId));
+  }
 
-    const newColumn = String(overId);
+  function moveTaskToColumn(taskId: string, newColumn: string) {
+    if (!board) return;
+
     const columnKeys = board.columns.map((col) => col.key);
     if (!columnKeys.includes(newColumn)) return;
 
@@ -262,6 +287,8 @@ export default function ProjectBoardPage() {
       }
     }
 
+    setMoveError(null);
+
     queryClient.setQueryData<typeof board>(["project-board", projectId], (old) => {
       if (!old) return old;
       return {
@@ -279,6 +306,7 @@ export default function ProjectBoardPage() {
     });
 
     moveMutation.mutate({ taskId, boardColumn: newColumn });
+    setMobileColumn(newColumn);
   }
 
   if (isLoading || !board) {
@@ -290,6 +318,15 @@ export default function ProjectBoardPage() {
   const customFieldLabels = board.template.customFieldLabels;
   const health = (board.health || "green") as ProjectHealth;
   const healthStyle = HEALTH_STYLES[health];
+  const columnOptions = board.columns.map((col) => ({
+    id: col.key,
+    label: col.label,
+    count: col.tasks.length,
+  }));
+  const activeMobileColumn =
+    mobileColumn ?? board.columns.find((col) => col.tasks.length > 0)?.key ?? board.columns[0]?.key ?? "";
+  const mobileTasks = board.columns.find((col) => col.key === activeMobileColumn)?.tasks ?? [];
+  const mobileColumnMeta = board.columns.find((col) => col.key === activeMobileColumn);
 
   return (
     <div className="space-y-6">
@@ -346,7 +383,8 @@ export default function ProjectBoardPage() {
       {!canManage && (
         <Alert>
           <AlertDescription>
-            Click a task to see your assignment and timeline. Drag cards to update status.
+            <span className="hidden md:inline">Click a task to see your assignment and timeline. Drag cards to update status.</span>
+            <span className="md:hidden">Tap a column chip, open a task, or use Move to column to update status.</span>
           </AlertDescription>
         </Alert>
       )}
@@ -377,8 +415,42 @@ export default function ProjectBoardPage() {
         </Alert>
       )}
 
+      {/* Mobile: stage chips + stacked full-width task cards */}
+      <div className="space-y-4 md:hidden">
+        <StageChipBar
+          stages={columnOptions}
+          activeId={activeMobileColumn}
+          onChange={setMobileColumn}
+        />
+        {mobileColumnMeta && board.isGateLocked && mobileColumnMeta.key !== firstColumnKey && (
+          <p className="flex items-center gap-1 text-xs text-amber-700">
+            <Lock className="h-3.5 w-3.5" />
+            Locked until advance paid — tasks stay in the first column
+          </p>
+        )}
+        <div className="mobile-stack">
+          {mobileTasks.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-white/50 bg-white/30 px-4 py-8 text-center text-sm text-muted-foreground">
+              No tasks in {mobileColumnMeta?.label || "this column"}
+            </p>
+          ) : (
+            mobileTasks.map((task) => (
+              <CompactTaskCard
+                key={task.id}
+                task={task}
+                doneColumnKey={doneColumnKey}
+                mobile
+                onOpen={openTask}
+                columnOptions={board.columns.map((col) => ({ id: col.key, label: col.label }))}
+                onMoveColumn={moveTaskToColumn}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="hidden gap-3 md:flex">
           {board.columns.map((column) => (
             <BoardColumn
               key={column.key}

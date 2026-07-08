@@ -34,7 +34,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="card-grid-stats">
         {[
           ["Active leads", stats?.total ?? "—"],
           ["Closed won rate", stats ? `${stats.conversionRate}%` : "—"],
@@ -43,7 +43,7 @@ export default function DashboardPage() {
             ? ["Deliverables to review", pendingDeliverables.length]
             : ["Needs first response", stats?.awaitingFirstResponse ?? "—"],
         ].map(([label, value]) => (
-          <div key={label} className="glass-panel p-5">
+          <div key={label} className="stat-tile">
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className="stat-value">{value}</p>
           </div>

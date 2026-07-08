@@ -32,17 +32,18 @@ export default function ProposalsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="card-grid-2 xl:grid-cols-3">
           {proposals.map((proposal) => (
             <Link
               key={proposal.id}
               href={`/proposals/${proposal.leadId}`}
-              className="glass-panel p-5 transition hover:border-primary/30"
+              className="catalog-card transition hover:border-primary/30"
             >
+              <div className="flex min-h-0 flex-1 flex-col">
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h2 className="font-semibold">{proposal.lead?.name || "Lead"}</h2>
-                  <p className="text-xs text-muted-foreground">{proposal.lead?.company}</p>
+                <div className="min-w-0">
+                  <h2 className="line-clamp-2 text-sm font-semibold leading-snug sm:text-base">{proposal.lead?.name || "Lead"}</h2>
+                  <p className="line-clamp-1 text-xs text-muted-foreground">{proposal.lead?.company}</p>
                 </div>
                 {proposal.status === "REVISION_REQUESTED" ? (
                   <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800">
@@ -57,20 +58,23 @@ export default function ProposalsPage() {
                 )}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-3 text-xs">
+              <div className="mt-auto flex flex-col gap-2 pt-3 text-xs">
                 <span className={cn(proposal.overWordLimit && "text-amber-600")}>
                   {proposal.wordCount}/{proposal.wordLimit} words
                   {proposal.overWordLimit && " ⚠"}
                 </span>
                 {proposal.sentAt && (
                   <span className={cn("flex items-center gap-1", proposal.followUpOverdue ? "text-destructive" : "text-muted-foreground")}>
-                    <Clock className="h-3.5 w-3.5" />
-                    {proposal.followUpOverdue
-                      ? "24h follow-up overdue"
-                      : `${proposal.followUpHoursRemaining}h until follow-up due`}
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    <span className="line-clamp-2">
+                      {proposal.followUpOverdue
+                        ? "24h follow-up overdue"
+                        : `${proposal.followUpHoursRemaining}h until follow-up`}
+                    </span>
                   </span>
                 )}
-                <span className="text-primary">View preview →</span>
+                <span className="font-medium text-primary">View →</span>
+              </div>
               </div>
             </Link>
           ))}

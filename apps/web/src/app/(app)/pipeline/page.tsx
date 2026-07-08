@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { api, cn, type Lead, type PipelineColumn } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { MobileStageSelect, StageChipBar } from "@/components/mobile-stage-picker";
 
 const PIPELINE_STAGES = [
   "NEW",
@@ -45,12 +46,16 @@ function LeadCardContent({
   lead,
   onRespond,
   onConvert,
+  onStageChange,
   isDragging,
+  mobile = false,
 }: {
   lead: Lead;
   onRespond: (id: string) => void;
   onConvert: (id: string) => void;
+  onStageChange?: (id: string, stage: string) => void;
   isDragging?: boolean;
+  mobile?: boolean;
 }) {
   const slaClass = lead.sla.breached
     ? "text-destructive"
@@ -61,12 +66,12 @@ function LeadCardContent({
   return (
     <article
       className={cn(
-        "glass-panel p-3",
+        mobile ? "stack-card" : "glass-panel p-3",
         isDragging && "opacity-50 ring-2 ring-primary",
       )}
     >
       <div className="flex items-start gap-2">
-        <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        {!mobile && <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />}
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -126,6 +131,14 @@ function LeadCardContent({
             >
               Convert to client
             </button>
+          )}
+
+          {mobile && onStageChange && (
+            <MobileStageSelect
+              value={lead.stage}
+              options={PIPELINE_STAGES.map((s) => ({ id: s, label: STAGE_LABELS[s] || s }))}
+              onChange={(stage) => onStageChange(lead.id, stage)}
+            />
           )}
         </div>
       </div>
@@ -209,6 +222,7 @@ export default function PipelinePage() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
+  const [mobileStage, setMobileStage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", company: "", source: "MANUAL" });
 
   const sensors = useSensors(
@@ -289,13 +303,45 @@ export default function PipelinePage() {
     updateMutation.mutate({ id: leadId, stage: newStage });
   }
 
+  function handleStageChange(leadId: string, newStage: string) {
+    if (!PIPELINE_STAGES.includes(newStage as (typeof PIPELINE_STAGES)[number])) return;
+    const currentLead = pipeline.flatMap((col) => col.leads).find((lead) => lead.id === leadId);
+    if (!currentLead || currentLead.stage === newStage) return;
+
+    queryClient.setQueryData<PipelineColumn[]>(["pipeline"], (old) => {
+      if (!old) return old;
+      return old.map((col) => ({
+        ...col,
+        leads:
+          col.stage === currentLead.stage
+            ? col.leads.filter((lead) => lead.id !== leadId)
+            : col.stage === newStage
+              ? [...col.leads, { ...currentLead, stage: newStage }]
+              : col.leads,
+      }));
+    });
+
+    updateMutation.mutate({ id: leadId, stage: newStage });
+    setMobileStage(newStage);
+  }
+
+  const stageOptions = pipeline.map((col) => ({
+    id: col.stage,
+    label: STAGE_LABELS[col.stage] || col.stage,
+    count: col.leads.length,
+  }));
+  const activeMobileStage =
+    mobileStage ?? pipeline.find((col) => col.leads.length > 0)?.stage ?? PIPELINE_STAGES[0];
+  const mobileLeads = pipeline.find((col) => col.stage === activeMobileStage)?.leads ?? [];
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="page-header">
         <div className="min-w-0">
           <h1 className="page-title">Lead Pipeline</h1>
           <p className="text-sm text-muted-foreground">
-            Drag leads between columns to update their stage
+            <span className="hidden md:inline">Drag leads between columns to update their stage</span>
+            <span className="md:hidden">Tap a stage, then use Move to update lead status</span>
           </p>
         </div>
         <button
@@ -308,14 +354,14 @@ export default function PipelinePage() {
       </div>
 
       {stats && (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="card-grid-stats">
           {[
             ["Total leads", stats.total],
             ["Conversion", `${stats.conversionRate}%`],
             ["SLA breaches", stats.slaBreaches],
             ["Awaiting response", stats.awaitingFirstResponse],
           ].map(([label, value]) => (
-            <div key={label} className="glass-panel p-4">
+            <div key={label} className="stat-tile">
               <p className="text-xs text-muted-foreground">{label}</p>
               <p className="stat-value">{value}</p>
             </div>
@@ -359,28 +405,57 @@ export default function PipelinePage() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading pipeline...</p>
       ) : (
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="kanban-scroll lg:grid lg:grid-cols-4 lg:gap-3 lg:overflow-visible 2xl:grid-cols-8">
-            {pipeline.map((column) => (
-              <div key={column.stage} className="kanban-column">
+        <>
+          {/* Mobile: Zoho-style stage chips + vertical card stack */}
+          <div className="space-y-4 md:hidden">
+            <StageChipBar
+              stages={stageOptions}
+              activeId={activeMobileStage}
+              onChange={setMobileStage}
+            />
+            <div className="mobile-stack">
+              {mobileLeads.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-white/50 bg-white/30 px-4 py-8 text-center text-sm text-muted-foreground">
+                  No leads in {STAGE_LABELS[activeMobileStage] || activeMobileStage}
+                </p>
+              ) : (
+                mobileLeads.map((lead) => (
+                  <LeadCardContent
+                    key={lead.id}
+                    lead={lead}
+                    mobile
+                    onRespond={(id) => respondMutation.mutate(id)}
+                    onConvert={(id) => convertMutation.mutate(id)}
+                    onStageChange={handleStageChange}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Desktop: kanban with drag-and-drop */}
+          <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="hidden gap-3 md:grid md:grid-cols-4 2xl:grid-cols-8">
+              {pipeline.map((column) => (
                 <PipelineColumn
+                  key={column.stage}
                   stage={column.stage}
                   leads={column.leads}
                   onRespond={(id) => respondMutation.mutate(id)}
                   onConvert={(id) => convertMutation.mutate(id)}
                 />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <DragOverlay>
-            {activeLead ? (
-              <div className="rotate-1 shadow-lg">
-                <LeadCardContent lead={activeLead} onRespond={() => {}} onConvert={() => {}} />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+            <DragOverlay>
+              {activeLead ? (
+                <div className="rotate-1 shadow-lg">
+                  <LeadCardContent lead={activeLead} onRespond={() => {}} onConvert={() => {}} />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </>
       )}
     </div>
   );

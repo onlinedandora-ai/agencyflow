@@ -154,13 +154,42 @@ h3 {
     @apply mt-1 text-xl font-semibold sm:mt-2 sm:text-2xl;
   }
 
-  .kanban-scroll {
-    @apply -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0;
-    -webkit-overflow-scrolling: touch;
+  /* E-commerce style proportional grids (Flipkart / Amazon 2-up on phone) */
+  .card-grid-2 {
+    @apply grid grid-cols-2 gap-3 sm:gap-4;
   }
 
-  .kanban-column {
-    @apply w-[min(280px,85vw)] shrink-0 sm:w-[min(300px,40vw)] lg:w-auto lg:min-w-[220px] lg:flex-1;
+  .card-grid-stats {
+    @apply grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4;
+  }
+
+  .stat-tile {
+    @apply flex min-h-[4.5rem] flex-col justify-center rounded-xl border border-white/50 bg-white/60 p-2.5 shadow-lg shadow-black/[0.04] backdrop-blur-2xl sm:min-h-[5rem] sm:p-3;
+  }
+
+  .catalog-card {
+    @apply flex h-full min-h-[8.5rem] flex-col rounded-2xl border border-white/50 bg-white/60 p-3 shadow-xl shadow-black/[0.04] backdrop-blur-2xl sm:min-h-[10rem] sm:p-4;
+  }
+
+  .stack-card {
+    @apply w-full rounded-2xl border border-white/50 bg-white/60 p-4 shadow-xl shadow-black/[0.04] backdrop-blur-2xl;
+  }
+
+  /* Zoho CRM–style stage chips: 2-column grid, wraps naturally */
+  .stage-chip-grid {
+    @apply grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4;
+  }
+
+  .stage-chip {
+    @apply flex min-h-[3.25rem] flex-col items-center justify-center rounded-xl border border-white/50 bg-white/45 px-2 py-2 text-center text-xs font-medium text-muted-foreground transition hover:bg-white/60;
+  }
+
+  .stage-chip-active {
+    @apply border-indigo-300 bg-indigo-50/90 font-semibold text-indigo-700 shadow-sm;
+  }
+
+  .mobile-stack {
+    @apply flex flex-col gap-3;
   }
 }
 

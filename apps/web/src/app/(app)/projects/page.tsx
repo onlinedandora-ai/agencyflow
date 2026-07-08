@@ -44,7 +44,7 @@ export default function ProjectsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="card-grid-2 xl:grid-cols-3">
           {projects.map((project) => {
             const health = (project.health || "green") as ProjectHealth;
             const healthStyle = HEALTH_STYLES[health];
@@ -53,15 +53,19 @@ export default function ProjectsPage() {
               <Link key={project.id} href={`/projects/${project.id}/board`} className="group block">
                 <Card
                   className={cn(
-                    "glass-panel h-full transition hover:border-primary/30 hover:shadow-2xl",
+                    "catalog-card transition hover:border-primary/30 hover:shadow-2xl",
                     project.isGateLocked && "border-amber-200/60",
                   )}
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="p-0 pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <CardTitle className="group-hover:text-primary">{project.name}</CardTitle>
-                        <CardDescription>{project.workspace.company}</CardDescription>
+                        <CardTitle className="text-sm leading-snug group-hover:text-primary sm:text-base">
+                          {project.name}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-1 text-xs sm:text-sm">
+                          {project.workspace.company}
+                        </CardDescription>
                       </div>
                       {project.isGateLocked ? (
                         <Lock className="h-4 w-4 shrink-0 text-amber-600" />
@@ -77,7 +81,7 @@ export default function ProjectsPage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-3">
+                  <CardContent className="flex flex-1 flex-col justify-end space-y-2 p-0">
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>
@@ -101,8 +105,8 @@ export default function ProjectsPage() {
                     </div>
                   </CardContent>
 
-                  <CardFooter>
-                    <span className="text-sm text-primary">Open board →</span>
+                  <CardFooter className="p-0 pt-2">
+                    <span className="text-xs text-primary sm:text-sm">Open board →</span>
                   </CardFooter>
                 </Card>
               </Link>

@@ -41,14 +41,14 @@ export default function ReportsPage() {
         <p className="text-sm text-muted-foreground">Pipeline, revenue, delivery health, and automation activity</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-4">
+      <div className="card-grid-stats">
         {[
           { label: "Active leads", value: pipeline?.total ?? "—", icon: TrendingUp },
           { label: "Win rate", value: pipeline ? `${pipeline.conversionRate}%` : "—", icon: TrendingUp },
           { label: "Collected", value: revenue ? formatInr(revenue.collected) : "—", icon: IndianRupee },
           { label: "Outstanding", value: revenue ? formatInr(revenue.outstanding) : "—", icon: IndianRupee },
         ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className="glass-panel p-5">
+          <div key={label} className="stat-tile">
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">{label}</p>
               <Icon className="h-4 w-4 text-muted-foreground" />
@@ -58,7 +58,7 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="card-grid-2 lg:grid-cols-3">
         <div className="glass-panel p-5">
           <h2 className="font-semibold">Pipeline alerts</h2>
           <ul className="mt-3 space-y-2 text-sm">
