@@ -110,6 +110,7 @@ model User {
 
   assignedLeads Lead[] @relation("LeadAssignee")
   assignedTasks Task[] @relation("TaskAssignee")
+  qaSignoffs    Task[] @relation("TaskQaSignoff")
   auditLogs     AuditLog[]
   proposalSends ProposalSendLog[]
   milestoneNotifications PaymentMilestoneNotification[]
@@ -292,9 +293,14 @@ model Task {
   dueDate         DateTime?
   assigneeId      String?
   assignee        User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  customFields    Json?
-  revisionRound   Int        @default(0)
-  isBlockedByGate Boolean    @default(false)
+  customFields            Json?
+  revisionRound           Int        @default(0)
+  qaSignedOffAt           DateTime?
+  qaSignedOffById         String?
+  qaSignedOffBy           User?      @relation("TaskQaSignoff", fields: [qaSignedOffById], references: [id])
+  billableRevisionPending Boolean    @default(false)
+  clientApprovedAt        DateTime?
+  isBlockedByGate         Boolean    @default(false)
   gateReason      String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt

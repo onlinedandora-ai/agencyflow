@@ -41,9 +41,10 @@ export default function DashboardPage() {
           <li className="text-green-600">✓ Proposal builder (6 sections, word limit, 24h timer)</li>
           <li className="text-green-600">✓ Client onboarding + advance-payment gate</li>
           <li className="text-green-600">✓ Task boards by service line (Kanban + gate)</li>
-          <li>○ Delivery + revision round tracking (next)</li>
-          <li>○ Invoicing + Razorpay integration</li>
+          <li className="text-green-600">✓ Delivery QA gate + revision round tracking</li>
+          <li>○ Razorpay online payments</li>
           <li>○ Workflow automation engine (BullMQ)</li>
+          <li>○ Reports &amp; Settings pages</li>
         </ul>
       </div>
     </div>

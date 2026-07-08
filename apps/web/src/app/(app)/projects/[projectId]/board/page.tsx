@@ -78,7 +78,19 @@ function CompactTaskCard({
             <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", priorityStyle.dot)} />
             <div className="min-w-0 flex-1">
               <h3 className="line-clamp-2 text-sm font-medium leading-snug">{task.title}</h3>
-              <TaskSlaTimer sla={task.sla} compact className="mt-1" />
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                <TaskSlaTimer sla={task.sla} compact />
+                {task.revisionRound > 0 && (
+                  <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                    R{task.revisionRound}
+                  </span>
+                )}
+                {task.billableRevisionPending && (
+                  <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+                    Billable
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Calendar, Clock, Pencil, Save, User } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, Clock, Pencil, Save, ShieldCheck, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TaskSlaTimer } from "@/components/task-sla-timer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -158,7 +158,32 @@ export function TaskDetailDrawer({
     onError: (err: Error) => setError(err.message),
   });
 
+  const qaSignoffMutation = useMutation({
+    mutationFn: () => api.signOffTaskQa(token, task!.id),
+    onSuccess: () => {
+      invalidate();
+      setError(null);
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const billableAckMutation = useMutation({
+    mutationFn: () => api.acknowledgeBillableRevision(token, task!.id),
+    onSuccess: () => {
+      invalidate();
+      setError(null);
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
   const displayTask = taskDetail || task;
+  const canAckBillable = userRole === "ADMIN" || userRole === "CLIENT_MANAGER";
+  const clientReviewKeys =
+    taskDetail?.template?.columns
+      .filter((col) => col.status === "CLIENT_REVIEW")
+      .map((col) => col.key) ?? [];
+  const isBeforeClientReview =
+    displayTask?.boardColumn && !clientReviewKeys.includes(displayTask.boardColumn);
   const priority = normalizePriority(displayTask?.priority);
   const overdue = isOverdue(displayTask?.dueDate, displayTask?.boardColumn, doneColumnKey);
   const dueLabel = formatDueCountdown(displayTask?.dueDate);
@@ -404,7 +429,68 @@ export function TaskDetailDrawer({
 
                 {displayTask.revisionRound > 0 && (
                   <Alert>
-                    <AlertDescription>Revision round {displayTask.revisionRound}</AlertDescription>
+                    <AlertDescription>
+                      Revision round {displayTask.revisionRound}
+                      {displayTask.revisionRound > 2 ? " — billable per SOP" : " — included in fee"}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {displayTask.billableRevisionPending && (
+                  <Alert variant="destructive">
+                    <AlertDescription className="space-y-2">
+                      <p>
+                        Round {displayTask.revisionRound} exceeds the 2 included revisions. Quote and
+                        bill before resuming client review.
+                      </p>
+                      {canAckBillable && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => billableAckMutation.mutate()}
+                          disabled={billableAckMutation.isPending}
+                        >
+                          Acknowledge billable revision
+                        </Button>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {mode === "view" && isBeforeClientReview && !displayTask.qaSignedOffAt && (
+                  <Alert>
+                    <ShieldCheck className="h-4 w-4" />
+                    <AlertDescription className="space-y-2">
+                      <p>Peer QA sign-off required before this task can move to client review.</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => qaSignoffMutation.mutate()}
+                        disabled={qaSignoffMutation.isPending}
+                      >
+                        {qaSignoffMutation.isPending ? "Signing off..." : "Sign off internal QA"}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {displayTask.qaSignedOffAt && displayTask.qaSignedOffBy && (
+                  <Alert className="border-green-200/60 bg-green-50/40">
+                    <CheckCircle2 className="h-4 w-4 text-green-700" />
+                    <AlertDescription className="text-green-900">
+                      QA signed off by {displayTask.qaSignedOffBy.name} on{" "}
+                      {new Date(displayTask.qaSignedOffAt).toLocaleDateString()}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {displayTask.clientApprovedAt && (
+                  <Alert className="border-green-200/60 bg-green-50/40">
+                    <CheckCircle2 className="h-4 w-4 text-green-700" />
+                    <AlertDescription className="text-green-900">
+                      Client approved {new Date(displayTask.clientApprovedAt).toLocaleDateString()}
+                    </AlertDescription>
                   </Alert>
                 )}
 

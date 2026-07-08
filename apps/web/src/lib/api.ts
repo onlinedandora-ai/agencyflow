@@ -187,6 +187,10 @@ export type TaskItem = {
   dueDate?: string | null;
   sla?: TaskSla;
   revisionRound: number;
+  qaSignedOffAt?: string | null;
+  qaSignedOffBy?: { id: string; name: string; email: string; role?: string } | null;
+  billableRevisionPending?: boolean;
+  clientApprovedAt?: string | null;
   isBlockedByGate?: boolean;
   gateReason?: string | null;
   customFields?: Record<string, string> | null;
@@ -458,6 +462,10 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ boardColumn }),
     }, token),
+  signOffTaskQa: (token: string, taskId: string) =>
+    apiFetch<TaskItem>(`/projects/tasks/${taskId}/qa-signoff`, { method: "POST" }, token),
+  acknowledgeBillableRevision: (token: string, taskId: string) =>
+    apiFetch<TaskItem>(`/projects/tasks/${taskId}/acknowledge-billable-revision`, { method: "POST" }, token),
   getInvoices: (token: string, params?: { documentType?: string; status?: string }) => {
     const qs = new URLSearchParams();
     if (params?.documentType) qs.set("documentType", params.documentType);

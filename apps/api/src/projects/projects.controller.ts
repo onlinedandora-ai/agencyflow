@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../common/roles.decorator';
@@ -31,6 +31,21 @@ export class ProjectsController {
   @Patch('tasks/:taskId/move')
   moveTask(@Param('taskId') taskId: string, @Body() dto: MoveTaskDto) {
     return this.projectsService.moveTask(taskId, dto);
+  }
+
+  @Post('tasks/:taskId/qa-signoff')
+  signOffQa(@Param('taskId') taskId: string, @Req() req: { user: { sub: string } }) {
+    return this.projectsService.signOffQa(taskId, req.user.sub);
+  }
+
+  @Post('tasks/:taskId/acknowledge-billable-revision')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLIENT_MANAGER)
+  acknowledgeBillableRevision(
+    @Param('taskId') taskId: string,
+    @Req() req: { user: { sub: string } },
+  ) {
+    return this.projectsService.acknowledgeBillableRevision(taskId, req.user.sub);
   }
 
   @Get()

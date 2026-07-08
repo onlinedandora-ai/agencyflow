@@ -5,7 +5,13 @@ import {
   getFirstColumnKey,
   getServiceLineTemplate,
   SERVICE_LINE_TEMPLATES,
+  type BoardColumn,
 } from '../common/service-line-templates';
+import {
+  isApprovedColumn,
+  isClientReviewColumn,
+  requiresBillableAcknowledgement,
+} from '../common/delivery-gates';
 import { normalizePriority } from '../common/task-priorities';
 import { computeSlaDeadline, computeTaskSla } from '../common/task-sla';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,6 +23,7 @@ export class ProjectsService {
 
   private taskInclude = {
     assignee: { select: { id: true, name: true, email: true, role: true } },
+    qaSignedOffBy: { select: { id: true, name: true, email: true, role: true } },
   };
 
   private projectInclude = {
@@ -39,6 +46,11 @@ export class ProjectsService {
       priority: string | null;
       dueDate: Date | null;
       revisionRound: number;
+      qaSignedOffAt: Date | null;
+      qaSignedOffById: string | null;
+      qaSignedOffBy?: { id: string; name: string; email: string; role?: string } | null;
+      billableRevisionPending: boolean;
+      clientApprovedAt: Date | null;
       isBlockedByGate: boolean;
       gateReason: string | null;
       customFields: unknown;
@@ -57,6 +69,8 @@ export class ProjectsService {
       priority: normalizePriority(task.priority),
       customFields: (task.customFields as Record<string, string> | null) ?? null,
       dueDate: task.dueDate?.toISOString() ?? sla.deadline,
+      qaSignedOffAt: task.qaSignedOffAt?.toISOString() ?? null,
+      clientApprovedAt: task.clientApprovedAt?.toISOString() ?? null,
       createdAt: task.createdAt.toISOString(),
       updatedAt: task.updatedAt.toISOString(),
       sla,
@@ -258,6 +272,148 @@ export class ProjectsService {
     return { project, serviceLine };
   }
 
+  private getColumn(serviceLine: string, columnKey: string): BoardColumn {
+    const template = getServiceLineTemplate(serviceLine);
+    const column = template.columns.find((col) => col.key === columnKey);
+    if (!column) throw new BadRequestException('Invalid board column for this service line');
+    return column;
+  }
+
+  private enforceDeliveryGates(
+    task: {
+      boardColumn: string;
+      revisionRound: number;
+      qaSignedOffAt: Date | null;
+      billableRevisionPending: boolean;
+      assigneeId: string | null;
+    },
+    serviceLine: string,
+    fromColumn: BoardColumn,
+    toColumn: BoardColumn,
+  ) {
+    const fromIdx = columnIndex(serviceLine, fromColumn.key);
+    const toIdx = columnIndex(serviceLine, toColumn.key);
+
+    if (isClientReviewColumn(toColumn)) {
+      if (!task.qaSignedOffAt) {
+        throw new BadRequestException(
+          'Peer QA sign-off is required before moving a task to client review',
+        );
+      }
+      if (task.billableRevisionPending) {
+        throw new BadRequestException(
+          'Revision round 3+ is billable — a manager must acknowledge before client review resumes',
+        );
+      }
+    }
+
+    if (isClientReviewColumn(fromColumn) && toIdx < fromIdx) {
+      const nextRound = task.revisionRound + 1;
+      if (requiresBillableAcknowledgement(nextRound)) {
+        return {
+          revisionRound: nextRound,
+          billableRevisionPending: true,
+          qaSignedOffAt: null,
+          qaSignedOffById: null,
+        };
+      }
+      return {
+        revisionRound: nextRound,
+        billableRevisionPending: task.billableRevisionPending,
+        qaSignedOffAt: null,
+        qaSignedOffById: null,
+      };
+    }
+
+    return null;
+  }
+
+  async signOffQa(taskId: string, actorId: string) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: { project: { include: { workspace: true } } },
+    });
+    if (!task) throw new NotFoundException('Task not found');
+
+    const serviceLine = task.project.workspace.serviceLine || 'Content Creation';
+    const clientReviewIdx = getServiceLineTemplate(serviceLine).columns.findIndex((col) =>
+      isClientReviewColumn(col),
+    );
+
+    if (clientReviewIdx < 0) {
+      throw new BadRequestException('This service line has no client review stage');
+    }
+
+    const currentIdx = columnIndex(serviceLine, task.boardColumn);
+    if (currentIdx >= clientReviewIdx) {
+      throw new BadRequestException('QA sign-off must happen before client review');
+    }
+
+    if (task.assigneeId && task.assigneeId === actorId) {
+      throw new BadRequestException('QA sign-off must be done by someone other than the assignee');
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.task.update({
+        where: { id: taskId },
+        data: {
+          qaSignedOffAt: new Date(),
+          qaSignedOffById: actorId,
+        },
+        include: this.taskInclude,
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          entityType: 'task',
+          entityId: taskId,
+          action: 'qa_signoff',
+          metadata: { boardColumn: task.boardColumn, serviceLine },
+        },
+      });
+
+      return row;
+    });
+
+    return this.formatTask(updated, serviceLine);
+  }
+
+  async acknowledgeBillableRevision(taskId: string, actorId: string) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: { project: { include: { workspace: true } } },
+    });
+    if (!task) throw new NotFoundException('Task not found');
+    if (!task.billableRevisionPending) {
+      throw new BadRequestException('This task has no pending billable revision');
+    }
+
+    const serviceLine = task.project.workspace.serviceLine || 'Content Creation';
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.task.update({
+        where: { id: taskId },
+        data: { billableRevisionPending: false },
+        include: this.taskInclude,
+      });
+
+      await tx.auditLog.create({
+        data: {
+          actorId,
+          entityType: 'task',
+          entityId: taskId,
+          action: 'billable_revision_acknowledged',
+          metadata: { revisionRound: task.revisionRound },
+        },
+      });
+
+      return row;
+    });
+
+    return this.formatTask(updated, serviceLine);
+  }
+
   private enforceGate(
     project: { status: ProjectStatus },
     serviceLine: string,
@@ -344,26 +500,39 @@ export class ProjectsService {
     if (!task) throw new NotFoundException('Task not found');
 
     const serviceLine = task.project.workspace.serviceLine || 'Content Creation';
-    const template = getServiceLineTemplate(serviceLine);
-    const column = template.columns.find((col) => col.key === dto.boardColumn);
-    if (!column) throw new BadRequestException('Invalid board column for this service line');
+    const fromColumn = this.getColumn(serviceLine, task.boardColumn);
+    const toColumn = this.getColumn(serviceLine, dto.boardColumn);
 
     this.enforceGate(task.project, serviceLine, dto.boardColumn);
+
+    const deliveryPatch = this.enforceDeliveryGates(
+      task,
+      serviceLine,
+      fromColumn,
+      toColumn,
+    );
 
     const maxSort = await this.prisma.task.aggregate({
       where: { projectId: task.projectId, boardColumn: dto.boardColumn },
       _max: { sortOrder: true },
     });
 
+    const approvedAt =
+      isApprovedColumn(toColumn) && !isApprovedColumn(fromColumn)
+        ? new Date()
+        : undefined;
+
     return this.formatTask(
       await this.prisma.task.update({
         where: { id: taskId },
         data: {
           boardColumn: dto.boardColumn,
-          status: column.status as never,
+          status: toColumn.status as never,
           sortOrder: dto.sortOrder ?? (maxSort._max.sortOrder ?? -1) + 1,
           isBlockedByGate: false,
           gateReason: null,
+          ...(deliveryPatch ?? {}),
+          ...(approvedAt ? { clientApprovedAt: approvedAt } : {}),
         },
         include: this.taskInclude,
       }),
