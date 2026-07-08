@@ -13,13 +13,13 @@ export const DEFAULT_AGENCY_TERMS = `1. Scope: Work begins only after written ac
 7. Cancellation: If the client cancels after work has begun, fees for completed work and committed third-party costs remain payable.`;
 
 export const DEFAULT_AGENCY_PROFILE = {
-  name: 'AgencyFlow',
-  tagline: 'Where Strategy Meets Storytelling',
+  name: 'SreeDrisya Media',
+  tagline: 'AgencyFlow — Where Strategy Meets Storytelling',
   address: 'Hyderabad, Telangana, India',
   city: 'Hyderabad',
-  email: 'admin@agencyflow.com',
+  email: 'vaitahavya@sreedrisyamedia.com',
   phone: '+91 96189 66819',
-  website: 'agencyflow.app',
+  website: 'www.sreedrisyamedia.com',
   gstin: '36XXXXX1234X1ZX',
   bankName: 'HDFC Bank',
   bankAccount: 'XXXX XXXX 1234',

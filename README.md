@@ -1,6 +1,6 @@
 # AgencyFlow
 
-End-to-end agency operations platform — replaces Zoho CRM, Zoho Projects, Zoho Books, and manual SOP tracking.
+End-to-end agency operations platform by **SreeDrisya Media** — replaces Zoho CRM, Zoho Projects, Zoho Books, and manual SOP tracking.
 
 See [prd.md](./prd.md) for the full product requirements document.
 

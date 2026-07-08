@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="no-print flex w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-ink)] text-white">
         <div className="border-b border-white/10 px-6 py-5">
           <div className="text-lg font-semibold tracking-tight">AgencyFlow</div>
-          <p className="mt-1 text-xs text-white/60">Agency operations platform</p>
+          <p className="mt-1 text-xs text-white/60">by SreeDrisya Media</p>
         </div>
         <nav className="flex-1 space-y-1 p-4">
           <div>

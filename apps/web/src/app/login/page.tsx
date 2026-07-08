@@ -33,6 +33,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       <div className="hidden w-1/2 bg-[var(--color-primary)] p-12 text-white lg:flex lg:flex-col lg:justify-center">
         <h1 className="text-4xl font-semibold">AgencyFlow</h1>
+        <p className="mt-2 text-sm text-white/70">A product of SreeDrisya Media</p>
         <p className="mt-4 max-w-md text-lg text-white/85">
           Encode your agency SOP as software — from lead capture to delivery, invoicing, and vendor management.
         </p>
