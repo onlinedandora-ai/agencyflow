@@ -192,6 +192,11 @@ export type DiscoveryCall = {
   lead?: Lead;
 };
 
+export type WorkspaceLeadRef = {
+  id: string;
+  leadId?: string | null;
+};
+
 export type ClientWorkspace = {
   id: string;
   name: string;
@@ -616,6 +621,8 @@ export const api = {
   upsertDiscovery: (token: string, leadId: string, data: Record<string, unknown>) =>
     apiFetch<DiscoveryCall>(`/discovery/lead/${leadId}`, { method: "PUT", body: JSON.stringify(data) }, token),
   getWorkspaces: (token: string) => apiFetch<ClientWorkspace[]>("/onboarding/workspaces", {}, token),
+  getWorkspaceLeadRefs: (token: string) =>
+    apiFetch<WorkspaceLeadRef[]>("/onboarding/workspaces?slim=1", {}, token),
   searchWorkspaces: (token: string, q = "") =>
     apiFetch<WorkspaceSearchResult[]>(
       `/onboarding/workspaces/search${q ? `?q=${encodeURIComponent(q)}` : ""}`,

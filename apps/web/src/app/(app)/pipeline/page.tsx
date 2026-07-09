@@ -14,10 +14,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Archive, Briefcase, Clock, GripVertical, MoreHorizontal, Plus } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
-import { LeadEditDialog } from "@/components/lead-edit-dialog";
-import { NewWorkOnboardingDialog } from "@/components/new-work-onboarding-dialog";
+import { KanbanBoardSkeleton, StatTilesSkeleton } from "@/components/loading-skeletons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   DropdownMenu,
@@ -28,8 +28,18 @@ import {
 import { api, cn, type Lead, type PipelineColumn } from "@/lib/api";
 import { getLeadCardActions, PIPELINE_STAGES } from "@/lib/lead-actions";
 import { useAuthStore } from "@/lib/auth-store";
+import { LIST_STALE_TIME, STATS_STALE_TIME } from "@/lib/query-config";
 import { canManageTasks } from "@/lib/task-utils";
 import { MobileStageSelect, StageChipBar } from "@/components/mobile-stage-picker";
+
+const LeadEditDialog = dynamic(
+  () => import("@/components/lead-edit-dialog").then((m) => m.LeadEditDialog),
+  { ssr: false },
+);
+const NewWorkOnboardingDialog = dynamic(
+  () => import("@/components/new-work-onboarding-dialog").then((m) => m.NewWorkOnboardingDialog),
+  { ssr: false },
+);
 
 type DragHandleProps = React.HTMLAttributes<HTMLButtonElement>;
 
@@ -362,20 +372,23 @@ export default function PipelinePage() {
     queryKey: ["pipeline"],
     queryFn: () => api.getPipeline(token),
     select: normalizePipeline,
+    staleTime: LIST_STALE_TIME,
   });
 
   const { data: stats } = useQuery({
     queryKey: ["pipeline-stats"],
     queryFn: () => api.getStats(token),
+    staleTime: STATS_STALE_TIME,
   });
 
-  const { data: workspaces = [] } = useQuery({
-    queryKey: ["workspaces"],
-    queryFn: () => api.getWorkspaces(token),
+  const { data: workspaceRefs = [] } = useQuery({
+    queryKey: ["workspace-lead-refs"],
+    queryFn: () => api.getWorkspaceLeadRefs(token),
+    staleTime: LIST_STALE_TIME,
   });
 
   const convertedLeadIds = new Set(
-    workspaces.map((ws) => ws.leadId).filter((id): id is string => Boolean(id)),
+    workspaceRefs.map((ws) => ws.leadId).filter((id): id is string => Boolean(id)),
   );
 
   const respondMutation = useMutation({
@@ -398,6 +411,7 @@ export default function PipelinePage() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace-lead-refs"] });
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       setConvertFeedback({
         type: "success",
@@ -577,7 +591,7 @@ export default function PipelinePage() {
         </Alert>
       )}
 
-      {stats && (
+      {stats ? (
         <div className="card-grid-stats">
           {[
             ["Total leads", stats.total],
@@ -591,6 +605,8 @@ export default function PipelinePage() {
             </div>
           ))}
         </div>
+      ) : (
+        <StatTilesSkeleton />
       )}
 
       {showForm && (
@@ -635,7 +651,7 @@ export default function PipelinePage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading pipeline...</p>
+        <KanbanBoardSkeleton />
       ) : (
         <>
           {/* Mobile: Zoho-style stage chips + vertical card stack */}

@@ -4,8 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 import { CheckCircle2, Clock, FileCheck, Lock, Plus, Unlock } from "lucide-react";
+import { WorkspaceListSkeleton } from "@/components/loading-skeletons";
 import { api, cn } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { LIST_STALE_TIME } from "@/lib/query-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NewWorkOnboardingDialog } from "@/components/new-work-onboarding-dialog";
@@ -33,11 +35,13 @@ export default function ClientsPage() {
   const { data: workspaces = [], isLoading } = useQuery({
     queryKey: ["workspaces"],
     queryFn: () => api.getWorkspaces(token),
+    staleTime: LIST_STALE_TIME,
   });
 
   const { data: pendingClaims = [] } = useQuery({
     queryKey: ["payment-claims", "PENDING"],
     queryFn: () => api.getPaymentClaims(token, "PENDING"),
+    staleTime: LIST_STALE_TIME,
   });
 
   const approveMutation = useMutation({
@@ -138,7 +142,7 @@ export default function ClientsPage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading workspaces...</p>
+        <WorkspaceListSkeleton />
       ) : workspaces.length === 0 ? (
         <div className="glass-panel border-dashed p-8 text-center">
           <Lock className="mx-auto h-8 w-8 text-muted-foreground" />

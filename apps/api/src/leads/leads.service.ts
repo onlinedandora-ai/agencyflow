@@ -64,12 +64,32 @@ export class LeadsService {
   }
 
   async findByStage() {
-    const leads = await this.findAll();
+    const leads = await this.prisma.lead.findMany({
+      where: this.activeLeadFilter,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        company: true,
+        source: true,
+        stage: true,
+        notes: true,
+        firstResponseAt: true,
+        slaBreached: true,
+        archivedAt: true,
+        createdAt: true,
+        assignee: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const withSla = this.dedupeById(leads).map((lead) => this.withSlaMeta(lead));
     const stages = Object.values(LeadStage);
 
     return stages.map((stage) => ({
       stage,
-      leads: leads.filter((lead) => lead.stage === stage),
+      leads: withSla.filter((lead) => lead.stage === stage),
     }));
   }
 
@@ -213,11 +233,22 @@ export class LeadsService {
   }
 
   async getPipelineStats() {
-    const leads = await this.prisma.lead.findMany({ where: this.activeLeadFilter });
-    const total = leads.length;
-    const won = leads.filter((l) => l.stage === LeadStage.CLOSED_WON).length;
-    const breached = leads.filter((l) => l.slaBreached).length;
-    const awaitingResponse = leads.filter((l) => !l.firstResponseAt && l.stage === LeadStage.NEW).length;
+    const [total, won, breached, awaitingResponse] = await Promise.all([
+      this.prisma.lead.count({ where: this.activeLeadFilter }),
+      this.prisma.lead.count({
+        where: { ...this.activeLeadFilter, stage: LeadStage.CLOSED_WON },
+      }),
+      this.prisma.lead.count({
+        where: { ...this.activeLeadFilter, slaBreached: true },
+      }),
+      this.prisma.lead.count({
+        where: {
+          ...this.activeLeadFilter,
+          firstResponseAt: null,
+          stage: LeadStage.NEW,
+        },
+      }),
+    ]);
 
     return {
       total,

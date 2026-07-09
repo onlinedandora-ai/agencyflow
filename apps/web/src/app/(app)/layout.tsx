@@ -2,8 +2,10 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AppLayoutSkeleton } from "@/components/loading-skeletons";
 import { useAuthStore } from "@/lib/auth-store";
 import { AppShell } from "@/components/app-shell";
+import { warmupApi } from "@/lib/api-warmup";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -12,17 +14,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!hasHydrated) return;
+    warmupApi();
     if (!token) {
       router.replace("/login");
     }
   }, [hasHydrated, token, router]);
 
   if (!hasHydrated || !token) {
-    return (
-      <div className="mesh-page flex min-h-screen items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading AgencyFlow…</p>
-      </div>
-    );
+    return <AppLayoutSkeleton />;
   }
 
   return <AppShell>{children}</AppShell>;

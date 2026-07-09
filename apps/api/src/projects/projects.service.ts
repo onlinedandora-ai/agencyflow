@@ -162,8 +162,11 @@ export class ProjectsService {
 
   async findAll() {
     const projects = await this.prisma.project.findMany({
-      include: {
-        workspace: true,
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        workspace: { select: { id: true, name: true, company: true, serviceLine: true } },
         tasks: {
           select: {
             id: true,
@@ -192,13 +195,19 @@ export class ProjectsService {
       ];
 
       return {
-        ...project,
+        id: project.id,
+        name: project.name,
+        status: project.status,
         serviceLine,
         taskCount: project.tasks.length,
-        template: getServiceLineTemplate(project.workspace.serviceLine),
         isGateLocked: project.status === ProjectStatus.AWAITING_ADVANCE,
         ...stats,
         team: assignees,
+        workspace: {
+          id: project.workspace.id,
+          name: project.workspace.name,
+          company: project.workspace.company,
+        },
       };
     });
   }

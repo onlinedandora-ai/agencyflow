@@ -100,6 +100,8 @@ API env vars:
 
 Health check: `GET /health`
 
+**Render free tier cold start:** The API sleeps after ~15 minutes of inactivity. The first request after sleep can take **~30 seconds** while the container boots. This is not app slowness — retry once after a short wait. The web app pings `/health` on load and login to wake the API early. For always-on production, upgrade Render to a paid instance or use an external uptime ping (e.g. UptimeRobot → `https://your-api.onrender.com/health` every 10 minutes).
+
 ### 3. Web (Vercel)
 
 1. Import repo at [vercel.com](https://vercel.com)

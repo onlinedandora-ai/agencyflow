@@ -1,13 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { LoginRedirectSkeleton } from "@/components/loading-skeletons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { warmupApi } from "@/lib/api-warmup";
 import { useAuthStore } from "@/lib/auth-store";
 
 export default function LoginPage() {
@@ -18,6 +20,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("demo123");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+
+  useEffect(() => {
+    warmupApi();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +35,7 @@ export default function LoginPage() {
     try {
       const result = await api.login(email, password);
       setAuth(result.accessToken, result.user);
+      setRedirecting(true);
       router.replace("/pipeline");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign-in failed";
@@ -43,6 +51,10 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (redirecting) {
+    return <LoginRedirectSkeleton />;
   }
 
   return (

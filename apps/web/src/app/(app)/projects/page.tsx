@@ -6,8 +6,10 @@ import { AlertCircle, Kanban, Lock, Unlock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { ProjectCardsSkeleton } from "@/components/loading-skeletons";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { LIST_STALE_TIME } from "@/lib/query-config";
 import { HEALTH_STYLES, type ProjectHealth } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +19,7 @@ export default function ProjectsPage() {
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: () => api.getProjects(token),
+    staleTime: LIST_STALE_TIME,
   });
 
   return (
@@ -30,7 +33,7 @@ export default function ProjectsPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading projects...</p>
+        <ProjectCardsSkeleton />
       ) : projects.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center py-10 text-center">

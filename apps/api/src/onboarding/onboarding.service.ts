@@ -13,11 +13,43 @@ export class OnboardingService {
     private readonly invoicesService: InvoicesService,
   ) {}
 
-  async listWorkspaces() {
+  async listWorkspaces(slim = false) {
+    if (slim) {
+      return this.prisma.clientWorkspace.findMany({
+        select: { id: true, leadId: true },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
     return this.prisma.clientWorkspace.findMany({
-      include: {
-        projects: { include: { invoices: true } },
-        invoices: { orderBy: { createdAt: 'desc' } },
+      select: {
+        id: true,
+        name: true,
+        company: true,
+        email: true,
+        serviceLine: true,
+        billingToken: true,
+        leadId: true,
+        onboardingIntakeAt: true,
+        brandIntakeAt: true,
+        accessIntakeAt: true,
+        projects: {
+          select: { id: true, name: true, status: true },
+          orderBy: { createdAt: 'asc' },
+          take: 1,
+        },
+        invoices: {
+          where: { isAdvance: true },
+          select: {
+            id: true,
+            number: true,
+            amount: true,
+            status: true,
+            isAdvance: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

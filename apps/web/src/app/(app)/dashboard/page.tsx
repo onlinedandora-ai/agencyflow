@@ -3,8 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { FileCheck } from "lucide-react";
+import { StatTilesSkeleton } from "@/components/loading-skeletons";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { STATS_STALE_TIME } from "@/lib/query-config";
 import { canManageTasks, ROLE_LABELS } from "@/lib/task-utils";
 
 export default function DashboardPage() {
@@ -12,18 +14,21 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const isManager = canManageTasks(user?.role);
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["pipeline-stats"],
     queryFn: () => api.getStats(token),
+    staleTime: STATS_STALE_TIME,
   });
 
-  const { data: pendingDeliverables = [] } = useQuery({
+  const { data: pendingDeliverables = [], isLoading: deliverablesLoading } = useQuery({
     queryKey: ["pending-deliverables"],
     queryFn: () => api.getPendingDeliverables(token),
     enabled: isManager,
+    staleTime: STATS_STALE_TIME,
   });
 
   const roleLabel = ROLE_LABELS[user?.role || ""] || user?.role;
+  const showStatsSkeleton = statsLoading && !stats;
 
   return (
     <div className="space-y-6">
@@ -34,21 +39,25 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="card-grid-stats">
-        {[
-          ["Active leads", stats?.total ?? "—"],
-          ["Closed won rate", stats ? `${stats.conversionRate}%` : "—"],
-          ["SLA breaches", stats?.slaBreaches ?? "—"],
-          isManager
-            ? ["Deliverables to review", pendingDeliverables.length]
-            : ["Needs first response", stats?.awaitingFirstResponse ?? "—"],
-        ].map(([label, value]) => (
-          <div key={label} className="stat-tile">
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="stat-value">{value}</p>
-          </div>
-        ))}
-      </div>
+      {showStatsSkeleton ? (
+        <StatTilesSkeleton />
+      ) : (
+        <div className="card-grid-stats">
+          {[
+            ["Active leads", stats?.total ?? "—"],
+            ["Closed won rate", stats ? `${stats.conversionRate}%` : "—"],
+            ["SLA breaches", stats?.slaBreaches ?? "—"],
+            isManager
+              ? ["Deliverables to review", deliverablesLoading ? "…" : pendingDeliverables.length]
+              : ["Needs first response", stats?.awaitingFirstResponse ?? "—"],
+          ].map(([label, value]) => (
+            <div key={label} className="stat-tile">
+              <p className="text-sm text-muted-foreground">{label}</p>
+              <p className="stat-value">{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {isManager && pendingDeliverables.length > 0 && (
         <div className="glass-panel border-amber-200/60 p-5">

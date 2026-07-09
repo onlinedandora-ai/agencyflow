@@ -9,8 +9,8 @@ export class OnboardingController {
   constructor(private readonly onboardingService: OnboardingService) {}
 
   @Get('workspaces')
-  listWorkspaces() {
-    return this.onboardingService.listWorkspaces();
+  listWorkspaces(@Query('slim') slim?: string) {
+    return this.onboardingService.listWorkspaces(slim === '1' || slim === 'true');
   }
 
   @Get('workspaces/search')
