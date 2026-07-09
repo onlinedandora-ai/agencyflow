@@ -38,3 +38,12 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+/** Safety net if persist rehydration never completes (private browsing, storage errors). */
+if (typeof window !== "undefined") {
+  window.setTimeout(() => {
+    if (!useAuthStore.getState()._hasHydrated) {
+      useAuthStore.setState({ _hasHydrated: true });
+    }
+  }, 3_000);
+}

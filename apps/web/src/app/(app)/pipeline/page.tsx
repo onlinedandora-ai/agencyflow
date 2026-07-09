@@ -18,6 +18,11 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
 import { KanbanBoardSkeleton, StatTilesSkeleton } from "@/components/loading-skeletons";
+import {
+  QueryErrorBanner,
+  QuerySlowBanner,
+  useSlowQuery,
+} from "@/components/query-load-state";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   DropdownMenu,
@@ -368,14 +373,21 @@ export default function PipelinePage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
-  const { data: pipeline = [], isLoading } = useQuery({
+  const { data: pipeline = [], isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["pipeline"],
     queryFn: () => api.getPipeline(token),
     select: normalizePipeline,
     staleTime: LIST_STALE_TIME,
   });
 
-  const { data: stats } = useQuery({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+    error: statsErr,
+    refetch: refetchStats,
+    isFetching: statsFetching,
+  } = useQuery({
     queryKey: ["pipeline-stats"],
     queryFn: () => api.getStats(token),
     staleTime: STATS_STALE_TIME,
@@ -524,6 +536,12 @@ export default function PipelinePage() {
   const activeMobileStage =
     mobileStage ?? pipeline.find((col) => col.leads.length > 0)?.stage ?? PIPELINE_STAGES[0];
   const mobileLeads = pipeline.find((col) => col.stage === activeMobileStage)?.leads ?? [];
+  const pipelineBusy = isLoading || isFetching;
+  const statsBusy = statsLoading || statsFetching;
+  const showStatsSkeleton = statsBusy && !stats && !statsError;
+  const showPipelineSkeleton = pipelineBusy && !isError;
+  const pipelineSlow = useSlowQuery(pipelineBusy);
+  const statsSlow = useSlowQuery(statsBusy);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -591,13 +609,20 @@ export default function PipelinePage() {
         </Alert>
       )}
 
-      {stats ? (
+      {statsError ? (
+        <QueryErrorBanner error={statsErr} onRetry={() => refetchStats()} retrying={statsFetching} />
+      ) : showStatsSkeleton ? (
+        <>
+          {statsSlow && <QuerySlowBanner />}
+          <StatTilesSkeleton />
+        </>
+      ) : (
         <div className="card-grid-stats">
           {[
-            ["Total leads", stats.total],
-            ["Conversion", `${stats.conversionRate}%`],
-            ["SLA breaches", stats.slaBreaches],
-            ["Awaiting response", stats.awaitingFirstResponse],
+            ["Total leads", stats?.total ?? "—"],
+            ["Conversion", stats ? `${stats.conversionRate}%` : "—"],
+            ["SLA breaches", stats?.slaBreaches ?? "—"],
+            ["Awaiting response", stats?.awaitingFirstResponse ?? "—"],
           ].map(([label, value]) => (
             <div key={label} className="stat-tile">
               <p className="text-xs text-muted-foreground">{label}</p>
@@ -605,8 +630,6 @@ export default function PipelinePage() {
             </div>
           ))}
         </div>
-      ) : (
-        <StatTilesSkeleton />
       )}
 
       {showForm && (
@@ -650,8 +673,13 @@ export default function PipelinePage() {
         </form>
       )}
 
-      {isLoading ? (
-        <KanbanBoardSkeleton />
+      {isError ? (
+        <QueryErrorBanner error={error} onRetry={() => refetch()} retrying={isFetching} />
+      ) : showPipelineSkeleton ? (
+        <>
+          {pipelineSlow && <QuerySlowBanner />}
+          <KanbanBoardSkeleton />
+        </>
       ) : (
         <>
           {/* Mobile: Zoho-style stage chips + vertical card stack */}

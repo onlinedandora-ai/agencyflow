@@ -1,5 +1,7 @@
 export { cn } from "./utils";
 
+import { REQUEST_TIMEOUT_MS } from "./query-config";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export type User = {
@@ -516,29 +518,45 @@ export type InvoiceNumbering = {
 };
 
 async function apiFetch<T>(path: string, options: RequestInit = {}, token?: string | null): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const text = await response.text();
-    let message = text || "Request failed";
-    try {
-      const json = JSON.parse(text) as { message?: string | string[] };
-      if (Array.isArray(json.message)) message = json.message.join(", ");
-      else if (typeof json.message === "string") message = json.message;
-    } catch {
-      // plain text error body
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      let message = text || "Request failed";
+      try {
+        const json = JSON.parse(text) as { message?: string | string[] };
+        if (Array.isArray(json.message)) message = json.message.join(", ");
+        else if (typeof json.message === "string") message = json.message;
+      } catch {
+        // plain text error body
+      }
+      throw new Error(message);
     }
-    throw new Error(message);
-  }
 
-  return response.json();
+    return response.json();
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Request timed out — the API may be waking up. Please try again.");
+    }
+    if (err instanceof TypeError) {
+      throw new Error("Cannot reach the API. Check your connection or wait for the server to wake up.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export const api = {

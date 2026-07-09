@@ -4,6 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { FileCheck } from "lucide-react";
 import { StatTilesSkeleton } from "@/components/loading-skeletons";
+import {
+  QueryErrorBanner,
+  QuerySlowBanner,
+  useSlowQuery,
+} from "@/components/query-load-state";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { STATS_STALE_TIME } from "@/lib/query-config";
@@ -14,13 +19,27 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const isManager = canManageTasks(user?.role);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+    error: statsErr,
+    refetch: refetchStats,
+    isFetching: statsFetching,
+  } = useQuery({
     queryKey: ["pipeline-stats"],
     queryFn: () => api.getStats(token),
     staleTime: STATS_STALE_TIME,
   });
 
-  const { data: pendingDeliverables = [], isLoading: deliverablesLoading } = useQuery({
+  const {
+    data: pendingDeliverables = [],
+    isLoading: deliverablesLoading,
+    isError: deliverablesError,
+    error: deliverablesErr,
+    refetch: refetchDeliverables,
+    isFetching: deliverablesFetching,
+  } = useQuery({
     queryKey: ["pending-deliverables"],
     queryFn: () => api.getPendingDeliverables(token),
     enabled: isManager,
@@ -28,7 +47,9 @@ export default function DashboardPage() {
   });
 
   const roleLabel = ROLE_LABELS[user?.role || ""] || user?.role;
-  const showStatsSkeleton = statsLoading && !stats;
+  const statsBusy = statsLoading || statsFetching;
+  const showStatsSkeleton = statsBusy && !stats && !statsError;
+  const statsSlow = useSlowQuery(statsBusy);
 
   return (
     <div className="space-y-6">
@@ -39,8 +60,13 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {showStatsSkeleton ? (
-        <StatTilesSkeleton />
+      {statsError ? (
+        <QueryErrorBanner error={statsErr} onRetry={() => refetchStats()} retrying={statsFetching} />
+      ) : showStatsSkeleton ? (
+        <>
+          {statsSlow && <QuerySlowBanner />}
+          <StatTilesSkeleton />
+        </>
       ) : (
         <div className="card-grid-stats">
           {[
@@ -57,6 +83,14 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {isManager && deliverablesError && (
+        <QueryErrorBanner
+          error={deliverablesErr}
+          onRetry={() => refetchDeliverables()}
+          retrying={deliverablesFetching}
+        />
       )}
 
       {isManager && pendingDeliverables.length > 0 && (
