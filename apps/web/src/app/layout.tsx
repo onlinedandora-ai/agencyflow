@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import type { Metadata, Viewport } from "next";
 import { Providers } from "@/components/providers";
 import "./globals.css";
+import "@/app/proposal-print.css";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({
