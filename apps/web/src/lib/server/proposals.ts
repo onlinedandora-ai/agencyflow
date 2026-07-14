@@ -11,9 +11,9 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/server/prisma";
 import { getAgencyProfile } from "@/lib/server/settings";
+import { getWebOrigin } from "@/lib/server/web-origin";
 
 const WORD_LIMIT = 300;
-const WEB_ORIGIN = process.env.WEB_ORIGIN || "http://localhost:3000";
 
 const PROPOSAL_INCLUDE = {
   caseStudy: true,
@@ -367,7 +367,11 @@ export async function findAllProposals() {
     include: PROPOSAL_INCLUDE,
     orderBy: { updatedAt: "desc" },
   });
-  return proposals.map((p) => withMeta(p));
+  const origin = getWebOrigin();
+  return proposals.map((p) => ({
+    ...withMeta(p),
+    clientUrl: p.publicToken ? `${origin}/p/${p.publicToken}` : null,
+  }));
 }
 
 export async function findProposalByLead(leadId: string) {
@@ -392,7 +396,7 @@ export async function findProposalByLead(leadId: string) {
 
   const meta = withMeta(proposal);
   const clientUrl = proposal.publicToken
-    ? `${WEB_ORIGIN}/p/${proposal.publicToken}`
+    ? `${getWebOrigin()}/p/${proposal.publicToken}`
     : null;
 
   return { ...meta, clientUrl };
@@ -463,7 +467,7 @@ export async function sendProposal(
   const proposalNumber = proposal.proposalNumber || (await nextProposalNumber());
   const publicToken = proposal.publicToken || randomBytes(24).toString("hex");
   const version = 1;
-  const publicUrl = `${WEB_ORIGIN}/p/${publicToken}`;
+  const publicUrl = `${getWebOrigin()}/p/${publicToken}`;
 
   const updated = await prisma.$transaction(async (tx) => {
     const p = await tx.proposal.update({
@@ -540,7 +544,7 @@ export async function resendProposal(
 
   const now = new Date();
   const version = proposal.currentVersion + 1;
-  const publicUrl = `${WEB_ORIGIN}/p/${proposal.publicToken}`;
+  const publicUrl = `${getWebOrigin()}/p/${proposal.publicToken}`;
 
   const updated = await prisma.$transaction(async (tx) => {
     const p = await tx.proposal.update({
@@ -766,7 +770,7 @@ export async function acceptProposal(
 
   const refreshed = await getWorkspace(workspace.id);
   const billingUrl = refreshed.billingToken
-    ? `${WEB_ORIGIN}/c/${refreshed.billingToken}`
+    ? `${getWebOrigin()}/c/${refreshed.billingToken}`
     : null;
 
   const flowMessage =

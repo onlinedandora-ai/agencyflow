@@ -8,7 +8,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/server/prisma";
 
 const MAX_FILE_BYTES = 2_000_000;
-const WEB_ORIGIN = process.env.WEB_ORIGIN || "http://localhost:3000";
+import { getWebOrigin } from "@/lib/server/web-origin";
+
+const WEB_ORIGIN = getWebOrigin();
 
 const DELIVERABLE_INCLUDE = {
   submittedBy: { select: { id: true, name: true } },

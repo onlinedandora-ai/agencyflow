@@ -15,7 +15,9 @@ import {
 import { prisma } from "@/lib/server/prisma";
 import { getAgencyProfile } from "@/lib/server/settings";
 
-const WEB_ORIGIN = process.env.WEB_ORIGIN || "http://localhost:3000";
+import { getWebOrigin } from "@/lib/server/web-origin";
+
+const WEB_ORIGIN = getWebOrigin();
 
 export const INVOICE_INCLUDE = {
   workspace: true,

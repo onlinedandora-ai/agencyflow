@@ -29,6 +29,8 @@ export default function PublicProposalPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-proposal", token],
     queryFn: () => api.getPublicProposal(token),
+    enabled: Boolean(token),
+    retry: 1,
   });
 
   const acceptMutation = useMutation({

@@ -101,9 +101,9 @@ export default function ProposalBuilderPage() {
   const hasPendingRevisions = proposal.revisionRequests?.some(
     (r) => r.status === "PENDING" || r.status === "IN_PROGRESS",
   );
-  const clientUrl =
-    proposal.clientUrl ||
-    (proposal.publicToken ? `${window.location.origin}/p/${proposal.publicToken}` : "");
+  const clientUrl = proposal.publicToken
+    ? `${window.location.origin}/p/${proposal.publicToken}`
+    : proposal.clientUrl || "";
 
   function openSendModal(mode: "send" | "resend") {
     setSendMode(mode);
