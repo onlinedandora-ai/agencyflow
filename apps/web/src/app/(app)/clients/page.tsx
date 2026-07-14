@@ -161,8 +161,8 @@ export default function ClientsPage() {
             const isLocked = project?.status === "AWAITING_ADVANCE";
             const portalUrl =
               typeof window !== "undefined"
-                ? `${window.location.origin}/portal/${ws.billingToken}`
-                : `/portal/${ws.billingToken}`;
+                ? `${window.location.origin}/c/${ws.billingToken}`
+                : `/c/${ws.billingToken}`;
 
             return (
               <article
@@ -212,7 +212,7 @@ export default function ClientsPage() {
                     </div>
                     {project && (
                       <Link
-                        href={`/projects/${project.id}/board`}
+                        href={`/projects/board/${project.id}`}
                         className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-[var(--color-primary)]"
                       >
                         Open task board →

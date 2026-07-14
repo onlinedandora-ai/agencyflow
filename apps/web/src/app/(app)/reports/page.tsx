@@ -94,7 +94,7 @@ export default function ReportsPage() {
               <span className="font-medium">{revenue ? formatInr(revenue.overdueAmount) : "—"}</span>
             </li>
           </ul>
-          <Link href="/invoices" className="mt-3 inline-block text-sm text-primary">Open invoices →</Link>
+          <Link href="/invoices/list" className="mt-3 inline-block text-sm text-primary">Open invoices →</Link>
         </div>
 
         <div className="glass-panel p-5">
@@ -129,7 +129,7 @@ export default function ReportsPage() {
             <div className="mt-4 space-y-3 md:hidden">
               {projects.map((p) => (
                 <div key={p.id} className="rounded-xl border border-white/40 bg-white/30 p-3 text-sm">
-                  <Link href={`/projects/${p.id}/board`} className="font-medium text-primary">
+                  <Link href={`/projects/board/${p.id}`} className="font-medium text-primary">
                     {p.name}
                   </Link>
                   <p className="mt-1 text-muted-foreground">{p.client}</p>
@@ -159,7 +159,7 @@ export default function ReportsPage() {
                 {projects.map((p) => (
                   <tr key={p.id} className="border-b border-white/20">
                     <td className="py-2 pr-4">
-                      <Link href={`/projects/${p.id}/board`} className="font-medium text-primary">
+                      <Link href={`/projects/board/${p.id}`} className="font-medium text-primary">
                         {p.name}
                       </Link>
                     </td>

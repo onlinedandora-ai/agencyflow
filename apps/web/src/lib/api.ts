@@ -2,7 +2,11 @@ export { cn } from "./utils";
 
 import { REQUEST_TIMEOUT_MS } from "./query-config";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+/** Same-origin by default — Next Route Handlers serve the API on Vercel. */
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL !== undefined
+    ? process.env.NEXT_PUBLIC_API_URL
+    : "";
 
 export type User = {
   id: string;

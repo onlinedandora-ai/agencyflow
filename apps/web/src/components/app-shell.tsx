@@ -24,15 +24,15 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 const mainNavItems = [
   { href: "/pipeline", label: "Pipeline", icon: Users },
   { href: "/clients", label: "Clients", icon: Briefcase },
-  { href: "/projects", label: "Projects", icon: Kanban },
+  { href: "/projects/list", label: "Projects", icon: Kanban },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const salesNavItems = [
-  { href: "/proposals", label: "Proposals", icon: FileText },
-  { href: "/invoices", label: "Invoices", icon: Receipt },
+  { href: "/proposals/list", label: "Proposals", icon: FileText },
+  { href: "/invoices/list", label: "Invoices", icon: Receipt },
 ];
 
 function SidebarBrand() {

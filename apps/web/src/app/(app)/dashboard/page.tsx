@@ -116,7 +116,7 @@ export default function DashboardPage() {
                 </div>
                 {d.task?.project?.id && (
                   <Link
-                    href={`/projects/${d.task.project.id}/board`}
+                    href={`/projects/board/${d.task.project.id}`}
                     className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white"
                   >
                     Open task board →
@@ -134,7 +134,7 @@ export default function DashboardPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Open a project board, click your task, and upload documents or video/Drive links under Deliverables. Submit for manager approval when ready.
           </p>
-          <Link href="/projects" className="mt-3 inline-block text-sm font-medium text-primary">
+          <Link href="/projects/list" className="mt-3 inline-block text-sm font-medium text-primary">
             Go to projects →
           </Link>
         </div>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
           <h2 className="font-semibold">Quick links</h2>
           <ul className="mt-3 space-y-2 text-sm">
             <li><Link href="/pipeline" className="text-primary">Pipeline</Link></li>
-            <li><Link href="/projects" className="text-primary">Projects &amp; task boards</Link></li>
+            <li><Link href="/projects/list" className="text-primary">Projects &amp; task boards</Link></li>
             <li><Link href="/clients" className="text-primary">Clients &amp; payment review</Link></li>
           </ul>
         </div>

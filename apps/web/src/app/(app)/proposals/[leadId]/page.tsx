@@ -113,7 +113,7 @@ export default function ProposalBuilderPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Link href="/proposals" className="text-muted-foreground hover:text-primary">
+        <Link href="/proposals/list" className="text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">

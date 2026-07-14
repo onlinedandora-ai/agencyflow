@@ -69,3 +69,21 @@ export const SERVICE_LINE_TEMPLATES: Record<string, ServiceLineTemplate> = {
     customFieldLabels: { platform: "Platform", budget: "Budget", roasTarget: "ROAS target" },
   },
 };
+
+export const DEFAULT_SERVICE_LINE = "Content Creation";
+
+export function getServiceLineTemplate(serviceLine?: string | null): ServiceLineTemplate {
+  if (serviceLine && SERVICE_LINE_TEMPLATES[serviceLine]) {
+    return SERVICE_LINE_TEMPLATES[serviceLine];
+  }
+  return SERVICE_LINE_TEMPLATES[DEFAULT_SERVICE_LINE];
+}
+
+export function getFirstColumnKey(serviceLine?: string | null): string {
+  return getServiceLineTemplate(serviceLine).columns[0].key;
+}
+
+export function columnIndex(serviceLine: string | null | undefined, columnKey: string): number {
+  const template = getServiceLineTemplate(serviceLine);
+  return template.columns.findIndex((col) => col.key === columnKey);
+}

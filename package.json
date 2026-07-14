@@ -6,21 +6,20 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev": "npm run dev --workspace=apps/web",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run start:dev --workspace=apps/api",
-    "build": "npm run build --workspace=apps/api && npm run build --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "build:all": "npm run build --workspace=apps/api && npm run build --workspace=apps/web",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:migrate": "npm run prisma:migrate --workspace=apps/api",
     "db:seed": "npm run prisma:seed --workspace=apps/api",
     "db:studio": "npm run prisma:studio --workspace=apps/api",
+    "db:generate": "npm run prisma:generate --workspace=apps/api",
     "prototype": "npx --yes http-server prototype -p 8000 -c-1"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"
-  },
-  "dependencies": {
-    "@nestjs/platform-express": "^11.0.1"
   }
 }
