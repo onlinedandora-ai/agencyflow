@@ -5,6 +5,14 @@ import { DEFAULT_AGENCY_PROFILE } from '../src/common/agency-defaults';
 
 const prisma = new PrismaClient();
 
+function daysFromNow(days: number) {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
+function daysAgo(days: number) {
+  return daysFromNow(-days);
+}
+
 type DemoTaskSeed = {
   title: string;
   boardColumn: string;
@@ -20,30 +28,36 @@ type DemoTaskSeed = {
   qaSignedOffAt?: Date;
 };
 
-async function ensureDemoTasks(projectId: string, tasks: DemoTaskSeed[], defaultAssigneeId: string) {
+async function syncDemoTasks(projectId: string, tasks: DemoTaskSeed[], defaultAssigneeId: string) {
   for (const task of tasks) {
-    const exists = await prisma.task.findFirst({
+    const existing = await prisma.task.findFirst({
       where: { projectId, title: task.title },
     });
-    if (exists) continue;
+    const data = {
+      boardColumn: task.boardColumn,
+      status: task.status,
+      sortOrder: task.sortOrder,
+      priority: task.priority,
+      assigneeId: task.assigneeId ?? defaultAssigneeId,
+      revisionRound: task.revisionRound ?? 0,
+      description: task.description,
+      dueDate: task.dueDate,
+      customFields: task.customFields,
+      qaSignedOffAt: task.qaSignedOffAt,
+      qaSignedOffById: task.qaSignedOffById,
+    };
 
-    await prisma.task.create({
-      data: {
-        projectId,
-        title: task.title,
-        boardColumn: task.boardColumn,
-        status: task.status,
-        sortOrder: task.sortOrder,
-        priority: task.priority,
-        assigneeId: task.assigneeId ?? defaultAssigneeId,
-        revisionRound: task.revisionRound ?? 0,
-        description: task.description,
-        dueDate: task.dueDate,
-        customFields: task.customFields,
-        qaSignedOffAt: task.qaSignedOffAt,
-        qaSignedOffById: task.qaSignedOffById,
-      },
-    });
+    if (existing) {
+      await prisma.task.update({ where: { id: existing.id }, data });
+    } else {
+      await prisma.task.create({
+        data: {
+          projectId,
+          title: task.title,
+          ...data,
+        },
+      });
+    }
   }
 }
 
@@ -101,8 +115,68 @@ async function seedDemoProject(
     },
   });
 
-  await ensureDemoTasks(project.id, tasks, defaultAssigneeId);
+  await syncDemoTasks(project.id, tasks, defaultAssigneeId);
   return { workspace, project };
+}
+
+async function syncDemoLeads(managerId: string, adminId: string) {
+  const now = Date.now();
+  const demoLeads: Array<{
+    email: string;
+    stage: LeadStage;
+    firstResponseAt: Date;
+    createdAt: Date;
+    slaBreached: boolean;
+  }> = [
+    {
+      email: 'riya@startup.io',
+      stage: LeadStage.NEW,
+      firstResponseAt: new Date(now - 8 * 60 * 1000),
+      createdAt: new Date(now - 12 * 60 * 1000),
+      slaBreached: false,
+    },
+    {
+      email: 'arjun@brandco.in',
+      stage: LeadStage.DISCOVERY_SCHEDULED,
+      firstResponseAt: new Date(now - 2 * 60 * 60 * 1000),
+      createdAt: new Date(now - 3 * 60 * 60 * 1000),
+      slaBreached: false,
+    },
+    {
+      email: 'neha@retailplus.com',
+      stage: LeadStage.PROPOSAL_SENT,
+      firstResponseAt: new Date(now - 20 * 60 * 60 * 1000),
+      createdAt: new Date(now - 22 * 60 * 60 * 1000),
+      slaBreached: false,
+    },
+    {
+      email: 'karan@fintech.app',
+      stage: LeadStage.NEGOTIATION,
+      firstResponseAt: new Date(now - 2 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(now - 3 * 24 * 60 * 60 * 1000),
+      slaBreached: false,
+    },
+    {
+      email: 'lost@example.com',
+      stage: LeadStage.CLOSED_LOST,
+      firstResponseAt: new Date(now - 10 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(now - 11 * 24 * 60 * 60 * 1000),
+      slaBreached: false,
+    },
+  ];
+
+  for (const lead of demoLeads) {
+    await prisma.lead.updateMany({
+      where: { email: lead.email },
+      data: {
+        stage: lead.stage,
+        firstResponseAt: lead.firstResponseAt,
+        createdAt: lead.createdAt,
+        slaBreached: lead.slaBreached,
+        assigneeId: lead.email === 'karan@fintech.app' ? adminId : managerId,
+      },
+    });
+  }
 }
 
 /** Tasks in client review must have peer QA sign-off (by someone other than assignee). */
@@ -345,76 +419,67 @@ async function main() {
       },
     });
 
-    const existingTasks = await prisma.task.count({ where: { projectId: project.id } });
-    if (existingTasks === 0) {
-      await ensureDemoTasks(
-        project.id,
-        [
-          {
-            title: 'Brand film script & storyboard',
-            boardColumn: 'brief',
-            status: TaskStatus.TODO,
-            sortOrder: 0,
-            priority: 'HIGH',
-            assigneeId: manager.id,
-            description: 'Script + storyboard for 90-sec hero film. Two revision rounds included.',
-            dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            customFields: { contentType: 'Brand film', platform: 'YouTube', publishDate: '2026-08-01' },
-          },
-          {
-            title: 'Hero film — first cut',
-            boardColumn: 'draft',
-            status: TaskStatus.IN_PROGRESS,
-            sortOrder: 0,
-            priority: 'URGENT',
-            assigneeId: deliveryExec.id,
-            description: 'First assembly cut for client review. Include placeholder music.',
-            dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-          },
-          {
-            title: '12 social cutdowns — batch 1',
-            boardColumn: 'internal_review',
-            status: TaskStatus.INTERNAL_QA,
-            sortOrder: 0,
-            priority: 'Medium',
-            customFields: { contentType: 'Reels/Shorts', platform: 'Instagram', publishDate: '2026-08-20' },
-          },
-          {
-            title: 'Landing page hero video',
-            boardColumn: 'client_review',
-            status: TaskStatus.CLIENT_REVIEW,
-            sortOrder: 0,
-            priority: 'Medium',
-            revisionRound: 1,
-            customFields: { contentType: 'Web hero', platform: 'Website', publishDate: '2026-08-25' },
-          },
-        ],
-        manager.id,
-      );
-    } else {
-      await ensureDemoTasks(
-        project.id,
-        [
-          {
-            title: 'Social cutdowns — batch 2',
-            boardColumn: 'approved',
-            status: TaskStatus.APPROVED,
-            sortOrder: 0,
-            priority: 'Medium',
-            customFields: { contentType: 'Reels/Shorts', platform: 'Instagram', publishDate: '2026-08-28' },
-          },
-          {
-            title: 'Q3 launch recap post',
-            boardColumn: 'published',
-            status: TaskStatus.APPROVED,
-            sortOrder: 0,
-            priority: 'Low',
-            customFields: { contentType: 'Carousel', platform: 'LinkedIn', publishDate: '2026-09-01' },
-          },
-        ],
-        manager.id,
-      );
-    }
+    const retailTasks: DemoTaskSeed[] = [
+      {
+        title: 'Brand film script & storyboard',
+        boardColumn: 'brief',
+        status: TaskStatus.TODO,
+        sortOrder: 0,
+        priority: 'HIGH',
+        assigneeId: manager.id,
+        description: 'Script + storyboard for 90-sec hero film. Two revision rounds included.',
+        dueDate: daysFromNow(7),
+        customFields: { contentType: 'Brand film', platform: 'YouTube', publishDate: '2026-09-15' },
+      },
+      {
+        title: 'Hero film — first cut',
+        boardColumn: 'draft',
+        status: TaskStatus.IN_PROGRESS,
+        sortOrder: 0,
+        priority: 'HIGH',
+        assigneeId: deliveryExec.id,
+        description: 'First assembly cut for client review. Include placeholder music.',
+        dueDate: daysFromNow(4),
+      },
+      {
+        title: '12 social cutdowns — batch 1',
+        boardColumn: 'internal_review',
+        status: TaskStatus.INTERNAL_QA,
+        sortOrder: 0,
+        priority: 'MEDIUM',
+        dueDate: daysFromNow(10),
+        customFields: { contentType: 'Reels/Shorts', platform: 'Instagram', publishDate: '2026-09-20' },
+      },
+      {
+        title: 'Landing page hero video',
+        boardColumn: 'published',
+        status: TaskStatus.APPROVED,
+        sortOrder: 0,
+        priority: 'MEDIUM',
+        revisionRound: 1,
+        dueDate: daysFromNow(12),
+        customFields: { contentType: 'Web hero', platform: 'Website', publishDate: '2026-09-25' },
+      },
+      {
+        title: 'Social cutdowns — batch 2',
+        boardColumn: 'published',
+        status: TaskStatus.APPROVED,
+        sortOrder: 0,
+        priority: 'MEDIUM',
+        dueDate: daysFromNow(14),
+        customFields: { contentType: 'Reels/Shorts', platform: 'Instagram', publishDate: '2026-09-28' },
+      },
+      {
+        title: 'Q3 launch recap post',
+        boardColumn: 'published',
+        status: TaskStatus.APPROVED,
+        sortOrder: 0,
+        priority: 'LOW',
+        dueDate: daysFromNow(18),
+        customFields: { contentType: 'Carousel', platform: 'LinkedIn', publishDate: '2026-10-01' },
+      },
+    ];
+    await syncDemoTasks(project.id, retailTasks, manager.id);
 
     const advanceExists = await prisma.invoice.findFirst({
       where: { workspaceId: workspace.id, documentType: InvoiceDocumentType.DRAFT },
@@ -463,8 +528,9 @@ async function main() {
         boardColumn: 'strategy',
         status: TaskStatus.TODO,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
         assigneeId: manager.id,
+        dueDate: daysFromNow(5),
         customFields: { channel: 'Multi-channel', campaign: 'Q3 Launch', budget: '₹2.5L' },
       },
       {
@@ -472,16 +538,19 @@ async function main() {
         boardColumn: 'in_progress',
         status: TaskStatus.IN_PROGRESS,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
+        dueDate: daysAgo(1),
+        description: 'Slightly behind — client assets arrived late.',
         customFields: { channel: 'Meta', campaign: 'Retargeting', budget: '₹80K' },
       },
       {
         title: 'Google Search ad copy set',
-        boardColumn: 'client_approval',
-        status: TaskStatus.CLIENT_REVIEW,
+        boardColumn: 'live',
+        status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'Medium',
+        priority: 'MEDIUM',
         revisionRound: 1,
+        dueDate: daysFromNow(3),
         customFields: { channel: 'Google', campaign: 'Brand search', budget: '₹45K' },
       },
       {
@@ -489,7 +558,8 @@ async function main() {
         boardColumn: 'scheduled',
         status: TaskStatus.IN_PROGRESS,
         sortOrder: 0,
-        priority: 'Medium',
+        priority: 'MEDIUM',
+        dueDate: daysFromNow(6),
         customFields: { channel: 'Email', campaign: 'Nurture', budget: '—' },
       },
       {
@@ -497,7 +567,8 @@ async function main() {
         boardColumn: 'live',
         status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'Medium',
+        priority: 'MEDIUM',
+        dueDate: daysFromNow(2),
         customFields: { channel: 'Instagram', campaign: 'Organic', budget: '—' },
       },
       {
@@ -505,8 +576,19 @@ async function main() {
         boardColumn: 'reporting',
         status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'Low',
+        priority: 'LOW',
         assigneeId: admin.id,
+        dueDate: daysFromNow(4),
+        customFields: { channel: 'All', campaign: 'Monthly', budget: '—' },
+      },
+      {
+        title: 'August performance report',
+        boardColumn: 'reporting',
+        status: TaskStatus.APPROVED,
+        sortOrder: 0,
+        priority: 'LOW',
+        assigneeId: admin.id,
+        dueDate: daysFromNow(6),
         customFields: { channel: 'All', campaign: 'Monthly', budget: '—' },
       },
     ],
@@ -535,7 +617,8 @@ async function main() {
         boardColumn: 'backlog',
         status: TaskStatus.TODO,
         sortOrder: 0,
-        priority: 'Medium',
+        priority: 'MEDIUM',
+        dueDate: daysFromNow(8),
         customFields: { environment: 'Staging', bugSeverity: '—' },
       },
       {
@@ -543,8 +626,9 @@ async function main() {
         boardColumn: 'design',
         status: TaskStatus.IN_PROGRESS,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
         assigneeId: manager.id,
+        dueDate: daysFromNow(5),
         customFields: { environment: 'Figma', bugSeverity: '—' },
       },
       {
@@ -552,8 +636,9 @@ async function main() {
         boardColumn: 'dev',
         status: TaskStatus.IN_PROGRESS,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
         assigneeId: admin.id,
+        dueDate: daysFromNow(6),
         customFields: { repoLink: 'github.com/demo/fintech-api', environment: 'Dev' },
       },
       {
@@ -561,16 +646,19 @@ async function main() {
         boardColumn: 'qa',
         status: TaskStatus.INTERNAL_QA,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
+        dueDate: daysAgo(2),
+        description: 'Minor delay — waiting on staging deploy.',
         customFields: { environment: 'QA', bugSeverity: 'Medium' },
       },
       {
         title: 'Settings page redesign',
-        boardColumn: 'client_review',
-        status: TaskStatus.CLIENT_REVIEW,
+        boardColumn: 'live',
+        status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'Medium',
+        priority: 'MEDIUM',
         revisionRound: 2,
+        dueDate: daysFromNow(3),
         customFields: { environment: 'Preview', bugSeverity: '—' },
       },
       {
@@ -578,7 +666,8 @@ async function main() {
         boardColumn: 'live',
         status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'Low',
+        priority: 'LOW',
+        dueDate: daysFromNow(1),
         customFields: { repoLink: 'github.com/demo/fintech-web', environment: 'Production' },
       },
     ],
@@ -607,8 +696,9 @@ async function main() {
         boardColumn: 'planning',
         status: TaskStatus.TODO,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
         assigneeId: manager.id,
+        dueDate: daysFromNow(4),
         customFields: { platform: 'Multi', budget: '₹4L', roasTarget: '3.5x' },
       },
       {
@@ -616,7 +706,8 @@ async function main() {
         boardColumn: 'creative_build',
         status: TaskStatus.IN_PROGRESS,
         sortOrder: 0,
-        priority: 'Medium',
+        priority: 'MEDIUM',
+        dueDate: daysFromNow(6),
         customFields: { platform: 'LinkedIn', budget: '₹60K', roasTarget: '—' },
       },
       {
@@ -624,24 +715,27 @@ async function main() {
         boardColumn: 'client_approval',
         status: TaskStatus.CLIENT_REVIEW,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
         revisionRound: 1,
+        dueDate: daysFromNow(5),
         customFields: { platform: 'YouTube', budget: '₹1.2L', roasTarget: '2.8x' },
       },
       {
         title: 'Search brand campaign',
-        boardColumn: 'live',
+        boardColumn: 'reporting',
         status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'High',
+        priority: 'HIGH',
+        dueDate: daysFromNow(2),
         customFields: { platform: 'Google', budget: '₹90K', roasTarget: '4x' },
       },
       {
         title: 'Retargeting audience refresh',
-        boardColumn: 'optimizing',
-        status: TaskStatus.IN_PROGRESS,
+        boardColumn: 'reporting',
+        status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'Medium',
+        priority: 'MEDIUM',
+        dueDate: daysFromNow(3),
         customFields: { platform: 'Meta', budget: '₹50K', roasTarget: '3.2x' },
       },
       {
@@ -649,13 +743,16 @@ async function main() {
         boardColumn: 'reporting',
         status: TaskStatus.APPROVED,
         sortOrder: 0,
-        priority: 'Low',
+        priority: 'LOW',
         assigneeId: admin.id,
+        dueDate: daysFromNow(7),
         customFields: { platform: 'All', budget: '—', roasTarget: '3.5x' },
       },
     ],
     manager.id,
   );
+
+  await syncDemoLeads(manager.id, admin.id);
 
   await prisma.agencyProfile.upsert({
     where: { id: 'default' },
@@ -669,10 +766,12 @@ async function main() {
   console.log('Admin login: admin@agencyflow.com / demo123');
   console.log('Manager login: manager@agencyflow.com / demo123');
   console.log('Delivery exec login: exec@agencyflow.com / demo123');
+  console.log('On-time projects: RetailPlus (awaiting advance), Startup.io Paid Acquisition');
+  console.log('Slight delay (1 overdue task each): BrandCo Q3 Growth, FinTech Product Site v2');
   console.log('Task boards: /projects/demo-retailplus-project/board (gate locked)');
-  console.log('             /projects/demo-brandco-project/board (Digital Marketing)');
-  console.log('             /projects/demo-fintech-project/board (Web Development)');
-  console.log('             /projects/demo-startup-project/board (Ad Management)');
+  console.log('             /projects/demo-brandco-project/board (Digital Marketing — 1d overdue)');
+  console.log('             /projects/demo-fintech-project/board (Web Development — 2d overdue)');
+  console.log('             /projects/demo-startup-project/board (Ad Management — on track)');
 }
 
 main()
