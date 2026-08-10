@@ -2,11 +2,23 @@ export { cn } from "./utils";
 
 import { REQUEST_TIMEOUT_MS } from "./query-config";
 
-/** Same-origin by default — Next Route Handlers serve the API on Vercel. */
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL !== undefined
-    ? process.env.NEXT_PUBLIC_API_URL
-    : "";
+/** Same-origin when unset or blank — Next Route Handlers on Vercel. */
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/$/, "");
+
+function isRetryableApiError(err: Error): boolean {
+  const msg = err.message.toLowerCase();
+  return (
+    err.name === "AbortError" ||
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("timed out") ||
+    msg.includes("cannot reach the api")
+  );
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export type User = {
   id: string;
@@ -521,7 +533,13 @@ export type InvoiceNumbering = {
   receiptNextSeq: number;
 };
 
-async function apiFetch<T>(path: string, options: RequestInit = {}, token?: string | null): Promise<T> {
+type ApiFetchOptions = RequestInit & { retryCount?: number };
+
+async function apiFetchOnce<T>(
+  path: string,
+  options: RequestInit = {},
+  token?: string | null,
+): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -552,10 +570,10 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, token?: stri
     return response.json();
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("Request timed out — the API may be waking up. Please try again.");
+      throw new Error("Request timed out. Please try again.");
     }
     if (err instanceof TypeError) {
-      throw new Error("Cannot reach the API. Check your connection or wait for the server to wake up.");
+      throw new Error("Cannot reach the API. Check your connection and try again.");
     }
     throw err;
   } finally {
@@ -563,11 +581,36 @@ async function apiFetch<T>(path: string, options: RequestInit = {}, token?: stri
   }
 }
 
+async function apiFetch<T>(
+  path: string,
+  options: ApiFetchOptions = {},
+  token?: string | null,
+): Promise<T> {
+  const { retryCount = 0, ...fetchOptions } = options;
+  let lastError: Error | undefined;
+
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
+    try {
+      return await apiFetchOnce<T>(path, fetchOptions, token);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < retryCount && isRetryableApiError(lastError)) {
+        await sleep(Math.min(1_000 * 2 ** attempt, 4_000));
+        continue;
+      }
+      throw lastError;
+    }
+  }
+
+  throw lastError ?? new Error("Request failed");
+}
+
 export const api = {
   login: (email: string, password: string) =>
     apiFetch<{ accessToken: string; user: User }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+      retryCount: 2,
     }),
   me: (token: string) => apiFetch<User>("/auth/me", {}, token),
   getPipeline: (token: string) => apiFetch<PipelineColumn[]>("/leads/pipeline", {}, token),

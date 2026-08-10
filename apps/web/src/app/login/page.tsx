@@ -20,10 +20,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("demo123");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [warming, setWarming] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    warmupApi();
+    warmupApi().finally(() => setWarming(false));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -33,6 +34,7 @@ export default function LoginPage() {
     setError("");
 
     try {
+      await warmupApi();
       const result = await api.login(email, password);
       setAuth(result.accessToken, result.user);
       setRedirecting(true);
@@ -40,9 +42,7 @@ export default function LoginPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign-in failed";
       if (message === "Failed to fetch" || message.includes("NetworkError")) {
-        setError(
-          "Cannot reach the API. For local dev, run npm run dev:api. On production, wait ~30s for the API to wake up and try again.",
-        );
+        setError("Cannot reach the server. Check your connection and try again.");
       } else if (message.toLowerCase().includes("invalid credentials")) {
         setError("Invalid email or password");
       } else {
@@ -111,9 +111,15 @@ export default function LoginPage() {
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={loading || !hasHydrated}
+                disabled={loading || warming || !hasHydrated}
               >
-                {loading ? "Signing in..." : hasHydrated ? "Sign in" : "Loading…"}
+                {warming
+                  ? "Connecting…"
+                  : loading
+                    ? "Signing in…"
+                    : hasHydrated
+                      ? "Sign in"
+                      : "Loading…"}
               </Button>
 
               <p className="text-center text-xs text-muted-foreground">

@@ -1,13 +1,31 @@
 import { API_URL } from "./api";
 
-let warmupStarted = false;
+let warmupPromise: Promise<void> | null = null;
 
-/** Fire-and-forget ping to wake Render free-tier API before authenticated requests. */
-export function warmupApi() {
-  if (warmupStarted || typeof window === "undefined") return;
-  warmupStarted = true;
+/**
+ * Pre-connect to the API before authenticated requests.
+ * On Vercel each route cold-starts separately, so we warm /health and /auth/me.
+ */
+export function warmupApi(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (!warmupPromise) {
+    warmupPromise = runWarmup();
+  }
+  return warmupPromise;
+}
 
-  fetch(`${API_URL}/health`, { mode: "cors", cache: "no-store" }).catch(() => {
-    // Ignore — login and data queries surface real errors.
-  });
+async function runWarmup(): Promise<void> {
+  const base = API_URL;
+  const targets = [`${base}/health`];
+
+  // Same-origin: warm auth routes (401 is fine — we only need the function booted).
+  if (!base) {
+    targets.push(`${base}/auth/me`);
+  }
+
+  await Promise.allSettled(
+    targets.map((url) =>
+      fetch(url, { cache: "no-store", credentials: "same-origin" }),
+    ),
+  );
 }
