@@ -1,10 +1,12 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseError } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updateProfile,
+  sendPasswordResetEmail,
   signOut,
   type Auth,
 } from "firebase/auth";
@@ -32,9 +34,37 @@ export const auth: Auth | null = app ? getAuth(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
+export function getFirebaseErrorMessage(error: unknown): string {
+  if (!error) return "An unexpected error occurred.";
+  const fbErr = error as Partial<FirebaseError>;
+  switch (fbErr.code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+      return "Invalid email or password. Please verify your credentials.";
+    case "auth/user-not-found":
+      return "No account found with this email. Please sign up first.";
+    case "auth/email-already-in-use":
+      return "An account with this email already exists. Try signing in instead.";
+    case "auth/weak-password":
+      return "Password is too weak. Please use at least 6 characters.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/popup-closed-by-user":
+      return "Sign-in popup was closed before completing.";
+    case "auth/popup-blocked":
+      return "Sign-in popup was blocked by your browser. Please allow popups.";
+    case "auth/operation-not-allowed":
+      return "This sign-in provider is not enabled in the Firebase Console (Authentication > Sign-in method).";
+    case "auth/network-request-failed":
+      return "Network connection issue. Please check your internet connection.";
+    default:
+      return fbErr.message || "Authentication failed. Please try again.";
+  }
+}
+
 export async function loginWithGoogle() {
   if (!auth) {
-    throw new Error("Firebase is not yet configured. Please set your Firebase environment variables in .env.local.");
+    throw new Error("Firebase is not yet configured. Please verify your environment variables.");
   }
   const result = await signInWithPopup(auth, googleProvider);
   const idToken = await result.user.getIdToken();
@@ -46,7 +76,7 @@ export async function loginWithGoogle() {
 
 export async function loginWithEmailFirebase(email: string, pass: string) {
   if (!auth) {
-    throw new Error("Firebase is not yet configured. Please set your Firebase environment variables in .env.local.");
+    throw new Error("Firebase is not yet configured. Please verify your environment variables.");
   }
   const result = await signInWithEmailAndPassword(auth, email, pass);
   const idToken = await result.user.getIdToken();
@@ -56,16 +86,30 @@ export async function loginWithEmailFirebase(email: string, pass: string) {
   };
 }
 
-export async function registerWithEmailFirebase(email: string, pass: string) {
+export async function registerWithEmailFirebase(email: string, pass: string, displayName?: string) {
   if (!auth) {
-    throw new Error("Firebase is not yet configured. Please set your Firebase environment variables in .env.local.");
+    throw new Error("Firebase is not yet configured. Please verify your environment variables.");
   }
   const result = await createUserWithEmailAndPassword(auth, email, pass);
+  if (displayName && result.user) {
+    try {
+      await updateProfile(result.user, { displayName });
+    } catch {
+      // Non-fatal if profile update fails
+    }
+  }
   const idToken = await result.user.getIdToken();
   return {
     user: result.user,
     idToken,
   };
+}
+
+export async function resetPasswordFirebase(email: string) {
+  if (!auth) {
+    throw new Error("Firebase is not yet configured. Please verify your environment variables.");
+  }
+  await sendPasswordResetEmail(auth, email);
 }
 
 export async function logoutFirebase() {

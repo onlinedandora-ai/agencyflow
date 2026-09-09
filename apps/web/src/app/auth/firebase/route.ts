@@ -31,7 +31,6 @@ export async function POST(request: Request) {
 
   const { idToken, email: bodyEmail, name: bodyName } = parsed.data;
 
-  // Decode the Firebase JWT
   let decodedEmail: string | undefined = bodyEmail;
   let decodedName: string | undefined = bodyName;
 
@@ -41,11 +40,12 @@ export async function POST(request: Request) {
       name?: string;
       sub?: string;
       aud?: string;
+      iss?: string;
     };
     if (claims.email) {
       decodedEmail = claims.email;
     }
-    if (claims.name) {
+    if (claims.name && !decodedName) {
       decodedName = claims.name;
     }
   } catch {
@@ -55,17 +55,18 @@ export async function POST(request: Request) {
   }
 
   if (!decodedEmail) {
-    return jsonError("No verified email associated with this Firebase account", 400);
+    return jsonError("No verified email associated with this account", 400);
   }
 
   const email = decodedEmail.toLowerCase().trim();
-  const displayName = decodedName || email.split("@")[0] || "User";
+  const displayName = decodedName?.trim() || email.split("@")[0] || "User";
 
   // Find or provision user in the database
   let user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
     const userCount = await prisma.user.count();
+    // First user is Admin; subsequent users are Client Managers
     const initialRole = userCount === 0 ? "ADMIN" : "CLIENT_MANAGER";
     const dummyHash = await bcrypt.hash(`firebase-${Date.now()}-${Math.random()}`, 10);
 
@@ -76,6 +77,12 @@ export async function POST(request: Request) {
         passwordHash: dummyHash,
         role: initialRole,
       },
+    });
+  } else if (!user.name && displayName) {
+    // Fill in name if missing
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { name: displayName },
     });
   }
 
