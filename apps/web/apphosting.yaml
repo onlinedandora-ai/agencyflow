@@ -1,0 +1,17 @@
+# Firebase App Hosting configuration
+# Documentation: https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  minInstances: 0
+  maxInstances: 5
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: quickfresh-10mins
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: quickfresh-10mins.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: quickfresh-10mins.appspot.com
