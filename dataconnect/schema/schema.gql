@@ -1,0 +1,60 @@
+# AgencyFlow Data Connect (SQL Connect) Schema
+# PostgreSQL Relational Schema with @auth Directives
+# Documentation: https://firebase.google.com/docs/data-connect
+
+# User Table with auth.uid mapping
+type User @table {
+  id: String! @default(expr: "auth.uid")
+  email: String!
+  name: String
+  role: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Client Table
+type Client @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String!
+  email: String
+  company: String
+  status: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Project Table with relationships
+type Project @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String!
+  status: String!
+  client: Client!
+  owner: User
+  advanceRequired: Boolean! @default(value: true)
+  advancePaid: Boolean! @default(value: false)
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Lead Table with 30-min SLA tracking
+type Lead @table {
+  id: UUID! @default(expr: "uuidV4()")
+  name: String!
+  email: String
+  phone: String
+  stage: String!
+  source: String!
+  assignee: User
+  firstResponseAt: Timestamp
+  slaBreached: Boolean! @default(value: false)
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+# Invoice Table
+type Invoice @table {
+  id: UUID! @default(expr: "uuidV4()")
+  invoiceNumber: String!
+  amount: Float!
+  status: String!
+  project: Project!
+  client: Client!
+  dueDate: Date
+  createdAt: Timestamp! @default(expr: "request.time")
+}

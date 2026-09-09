@@ -1,0 +1,21 @@
+# AgencyFlow Mutations with @auth Directives
+# Enforces that mutations are performed by authenticated users and linked to auth.uid
+
+mutation UpsertMyUser($email: String!, $name: String, $role: String!) @auth(level: USER) {
+  user_upsert(data: {
+    id_expr: "auth.uid",
+    email: $email,
+    name: $name,
+    role: $role
+  })
+}
+
+mutation CreateLead($name: String!, $email: String, $phone: String, $stage: String!, $source: String!) @auth(level: USER) {
+  lead_insert(data: {
+    name: $name,
+    email: $email,
+    phone: $phone,
+    stage: $stage,
+    source: $source
+  })
+}

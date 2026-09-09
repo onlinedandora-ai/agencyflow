@@ -11,6 +11,8 @@ import {
   type Auth,
 } from "firebase/auth";
 
+import { initializeAppCheck, ReCaptchaV3Provider, type AppCheck } from "firebase/app-check";
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
@@ -33,6 +35,22 @@ const app = !getApps().length
 export const auth: Auth | null = app ? getAuth(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
+
+export let appCheck: AppCheck | null = null;
+if (typeof window !== "undefined" && app && process.env.NEXT_PUBLIC_FIREBASE_RECAPTCHA_SITE_KEY) {
+  try {
+    if (process.env.NODE_ENV !== "production") {
+      // @ts-expect-error App Check debug mode for local testing
+      self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
+    appCheck = initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_FIREBASE_RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } catch (err) {
+    console.warn("Firebase App Check failed to initialize:", err);
+  }
+}
 
 export function getFirebaseErrorMessage(error: unknown): string {
   if (!error) return "An unexpected error occurred.";

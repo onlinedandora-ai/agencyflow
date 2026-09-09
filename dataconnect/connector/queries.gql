@@ -1,0 +1,34 @@
+# AgencyFlow Queries with @auth Directives
+# Secures queries so only authenticated users can access them
+
+query GetMyUser @auth(level: USER) {
+  user(key: { id_expr: "auth.uid" }) {
+    id
+    email
+    name
+    role
+  }
+}
+
+query ListProjects @auth(level: USER) {
+  projects {
+    id
+    name
+    status
+    advanceRequired
+    advancePaid
+    createdAt
+  }
+}
+
+query ListLeads @auth(level: USER) {
+  leads {
+    id
+    name
+    email
+    stage
+    source
+    slaBreached
+    createdAt
+  }
+}

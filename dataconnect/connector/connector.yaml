@@ -1,0 +1,5 @@
+connectorId: "web"
+generate:
+  javascriptSdk:
+    outputDir: "../apps/web/src/lib/dataconnect-sdk"
+    package: "@agencyflow/dataconnect"

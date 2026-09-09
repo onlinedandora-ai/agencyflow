@@ -1,0 +1,11 @@
+specVersion: "v1alpha"
+serviceId: "agencyflow"
+location: "asia-south1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "agencyflow"
+      cloudSql:
+        instanceId: "agencyflow-db"
+connectorDirs: ["./connector"]
