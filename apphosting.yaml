@@ -10,19 +10,14 @@ runConfig:
 
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: AIzaSyCXfpZaZ_3H49YaV2hrFVzeH2hpaQQElKk
+    value: AIzaSyC59QRs6Sa9fZC39Yvl6SBDjIoKvkjvlUc
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: quickfresh-10mins
+    value: ajencyflow
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: quickfresh-10mins.firebaseapp.com
+    value: ajencyflow.firebaseapp.com
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: quickfresh-10mins.firebasestorage.app
+    value: ajencyflow.firebasestorage.app
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "83967003005"
+    value: "335519498043"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:83967003005:web:5b4359bc3de489adbb2414"
-  # Secrets managed via Google Cloud Secret Manager for App Hosting:
-  # - variable: DATABASE_URL
-  #   secret: DATABASE_URL
-  # - variable: JWT_SECRET
-  #   secret: JWT_SECRET
+    value: "1:335519498043:web:b20d19a59ac87d7fa4811e"
