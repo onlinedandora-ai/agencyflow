@@ -612,6 +612,12 @@ export const api = {
       body: JSON.stringify({ email, password }),
       retryCount: 2,
     }),
+  firebaseLogin: (data: { idToken: string; email?: string; name?: string }) =>
+    apiFetch<{ accessToken: string; user: User }>("/auth/firebase", {
+      method: "POST",
+      body: JSON.stringify(data),
+      retryCount: 2,
+    }),
   me: (token: string) => apiFetch<User>("/auth/me", {}, token),
   getPipeline: (token: string) => apiFetch<PipelineColumn[]>("/leads/pipeline", {}, token),
   getStats: (token: string) => apiFetch<PipelineStats>("/leads/stats", {}, token),
