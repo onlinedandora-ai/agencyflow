@@ -17,7 +17,8 @@
     "db:seed": "npm run prisma:seed --workspace=apps/api",
     "db:studio": "npm run prisma:studio --workspace=apps/api",
     "db:generate": "npm run prisma:generate --workspace=apps/api",
-    "prototype": "npx --yes http-server prototype -p 8000 -c-1"
+    "prototype": "npx --yes http-server prototype -p 8000 -c-1",
+    "deploy": "firebase deploy --only hosting"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"
