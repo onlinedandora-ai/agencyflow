@@ -23,7 +23,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "firebase": "^12.18.0",
-    "firebase-admin": "^14.3.0",
+    "firebase-admin": "^13.10.0",
     "jose": "^6.2.3",
     "lightningcss-win32-x64-msvc": "^1.32.0",
     "lucide-react": "^1.23.0",

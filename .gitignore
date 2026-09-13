@@ -16,8 +16,9 @@ apps/api/generated/
 *.log
 .DS_Store
 
-# vercel
+# vercel & firebase
 .vercel
+.firebase
 
 # typescript
 *.tsbuildinfo
