@@ -108,13 +108,24 @@ export async function loginWithGoogle() {
     };
   } catch (err: unknown) {
     const fbErr = err as Partial<FirebaseError>;
-    if (fbErr.code === "auth/popup-blocked") {
-      // Browser blocked popup — fallback to redirect
+    if (
+      fbErr.code === "auth/popup-blocked" ||
+      fbErr.code === "auth/cancelled-popup-request" ||
+      fbErr.code === "auth/internal-error"
+    ) {
+      // Browser blocked or cancelled popup — fallback to redirect
       await signInWithRedirect(auth, googleProvider);
       return null;
     }
     throw err;
   }
+}
+
+export async function loginWithGoogleRedirect() {
+  if (!auth) {
+    throw new Error("Firebase is not yet configured. Please verify your environment variables.");
+  }
+  await signInWithRedirect(auth, googleProvider);
 }
 
 export async function checkGoogleRedirectResult() {

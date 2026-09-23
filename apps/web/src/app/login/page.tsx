@@ -14,6 +14,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import {
   isFirebaseConfigured,
   loginWithGoogle,
+  loginWithGoogleRedirect,
   checkGoogleRedirectResult,
   loginWithEmailFirebase,
   registerWithEmailFirebase,
@@ -108,6 +109,25 @@ export default function LoginPage() {
     } catch (err) {
       setError(getFirebaseErrorMessage(err));
     } finally {
+      setGoogleLoading(false);
+    }
+  }
+
+  async function handleGoogleRedirectSignIn() {
+    if (!isHydrated) return;
+    setError("");
+    setInfo("");
+    setGoogleLoading(true);
+
+    try {
+      if (!isFirebaseConfigured) {
+        throw new Error(
+          "Firebase authentication is not configured. Please check your environment variables."
+        );
+      }
+      await loginWithGoogleRedirect();
+    } catch (err) {
+      setError(getFirebaseErrorMessage(err));
       setGoogleLoading(false);
     }
   }
@@ -421,6 +441,17 @@ export default function LoginPage() {
                       : "Sign in with Google"}
                   </span>
                 </button>
+
+                <div className="flex items-center justify-center gap-1 text-center -mt-2">
+                  <button
+                    type="button"
+                    onClick={handleGoogleRedirectSignIn}
+                    disabled={googleLoading || loading || !isHydrated}
+                    className="text-[11px] text-slate-500 hover:text-indigo-600 underline font-medium transition-colors cursor-pointer"
+                  >
+                    Popup blocked? Sign in with Google (Redirect) →
+                  </button>
+                </div>
 
                 <div className="relative flex items-center justify-center">
                   <div className="absolute inset-0 flex items-center">
