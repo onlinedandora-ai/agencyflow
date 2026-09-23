@@ -7,14 +7,15 @@
 
 | Service | Project | URL | Deploy |
 |---------|---------|-----|--------|
-| **App (UI + API)** | Firebase `ajencyflow` | https://ajencyflow.web.app | `npm run deploy` / GitHub Action |
+| **App (UI + API)** | Vercel `agencyflow` | https://agencyflow-dandora-team.vercel.app | Git push `main` |
 | **DB** | Supabase / Cloud SQL | Singapore pooler | `npm run db:migrate` / seed |
 
-**Firebase App Hosting**
+**Vercel Setup**
 
-- Project: `ajencyflow`
+- Project: `agencyflow` (Team: `dandora-team`)
 - Root directory: `apps/web`
 - Branch: `main`
+- Production URL: https://agencyflow-dandora-team.vercel.app
 
 ## Standard workflow
 
