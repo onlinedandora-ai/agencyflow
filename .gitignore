@@ -28,3 +28,4 @@ apps/api/node_modules/.prisma/
 .env*
 
 .vercel
+.env*
