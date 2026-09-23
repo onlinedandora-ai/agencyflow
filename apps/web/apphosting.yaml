@@ -10,17 +10,17 @@ runConfig:
 
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: AIzaSyC59QRs6Sa9fZC39Yvl6SBDjIoKvkjvlUc
+    value: AIzaSyCmsWkrXF-emhS_1ZHyDXGq9My9FWEfZJg
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: ajencyflow
+    value: agencyflow-web
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: ajencyflow.firebaseapp.com
+    value: agencyflow-web.firebaseapp.com
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: ajencyflow.firebasestorage.app
+    value: agencyflow-web.firebasestorage.app
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "335519498043"
+    value: "1069489954140"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:335519498043:web:b20d19a59ac87d7fa4811e"
+    value: "1:1069489954140:web:599951d5013f73cd35f599"
   - variable: DATABASE_URL
     value: postgresql://postgres.nwxshrpsunitweeoiuvy:7e%2AQm%3FZnus4ThYj@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
   - variable: DIRECT_URL

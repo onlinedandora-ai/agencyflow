@@ -14,6 +14,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import {
   isFirebaseConfigured,
   loginWithGoogle,
+  checkGoogleRedirectResult,
   loginWithEmailFirebase,
   registerWithEmailFirebase,
   resetPasswordFirebase,
@@ -52,8 +53,31 @@ export default function LoginPage() {
     router.prefetch("/pipeline");
     if (token) {
       router.replace("/pipeline");
+      return;
     }
-  }, [token, router]);
+
+    // Check for Google redirect result (if popup was blocked and redirect was used)
+    checkGoogleRedirectResult()
+      .then(async (res) => {
+        if (res) {
+          setGoogleLoading(true);
+          const result = await api.firebaseLogin({
+            idToken: res.idToken,
+            email: res.user.email || undefined,
+            name: res.user.displayName || undefined,
+          });
+          setAuth(result.accessToken, result.user);
+          setRedirecting(true);
+          router.replace("/pipeline");
+        }
+      })
+      .catch((err) => {
+        setError(getFirebaseErrorMessage(err));
+      })
+      .finally(() => {
+        setGoogleLoading(false);
+      });
+  }, [token, router, setAuth]);
 
   async function handleGoogleSignIn() {
     if (!isHydrated) return;
@@ -67,7 +91,12 @@ export default function LoginPage() {
           "Firebase authentication is not configured. Please check your environment variables."
         );
       }
-      const { idToken, user } = await loginWithGoogle();
+      const googleRes = await loginWithGoogle();
+      if (!googleRes) {
+        // Redirect flow initiated
+        return;
+      }
+      const { idToken, user } = googleRes;
       const result = await api.firebaseLogin({
         idToken,
         email: user.email || undefined,
@@ -109,7 +138,8 @@ export default function LoginPage() {
           if (
             fbCode === "auth/user-not-found" ||
             fbCode === "auth/invalid-credential" ||
-            fbCode === "auth/operation-not-allowed"
+            fbCode === "auth/operation-not-allowed" ||
+            fbCode === "auth/configuration-not-found"
           ) {
             // Fallback to database login below
           } else {
@@ -330,7 +360,23 @@ export default function LoginPage() {
           <CardContent className="space-y-4">
             {error && (
               <Alert variant="destructive" className="border-red-200 bg-red-50 text-red-700">
-                <AlertDescription className="text-xs sm:text-sm">{error}</AlertDescription>
+                <AlertDescription className="text-xs sm:text-sm leading-relaxed break-words">
+                  {error.split(/(https?:\/\/[^\s)]+)/g).map((part, i) =>
+                    part.startsWith("http") ? (
+                      <a
+                        key={i}
+                        href={part}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline font-bold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1 mx-1"
+                      >
+                        Open Firebase Console ↗
+                      </a>
+                    ) : (
+                      part
+                    )
+                  )}
+                </AlertDescription>
               </Alert>
             )}
 

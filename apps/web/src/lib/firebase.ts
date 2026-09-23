@@ -3,6 +3,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -35,6 +37,8 @@ const app = !getApps().length
 export const auth: Auth | null = app ? getAuth(app) : null;
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
+googleProvider.addScope("email");
+googleProvider.addScope("profile");
 
 export let appCheck: AppCheck | null = null;
 if (typeof window !== "undefined" && app && process.env.NEXT_PUBLIC_FIREBASE_RECAPTCHA_SITE_KEY) {
@@ -55,7 +59,24 @@ if (typeof window !== "undefined" && app && process.env.NEXT_PUBLIC_FIREBASE_REC
 export function getFirebaseErrorMessage(error: unknown): string {
   if (!error) return "An unexpected error occurred.";
   const fbErr = error as Partial<FirebaseError>;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "agencyflow-web";
+  const consoleAuthUrl = `https://console.firebase.google.com/project/${projectId}/authentication`;
+
   switch (fbErr.code) {
+    case "auth/configuration-not-found":
+      return `Google Sign-in is not yet enabled for project "${projectId}". In Firebase Console, go to Authentication > Sign-in method, click Google, toggle Enable, select a support email, and click Save. (${consoleAuthUrl}/providers)`;
+    case "auth/operation-not-allowed":
+      return `This sign-in provider is disabled in Firebase Console. Please enable it under Authentication > Sign-in method. (${consoleAuthUrl}/providers)`;
+    case "auth/unauthorized-domain": {
+      const currentHost = typeof window !== "undefined" ? window.location.hostname : "this domain";
+      return `Domain "${currentHost}" is not authorized. Please add "${currentHost}" in Firebase Console -> Authentication -> Settings -> Authorized domains. (${consoleAuthUrl}/settings)`;
+    }
+    case "auth/popup-blocked":
+      return "Sign-in popup was blocked by your browser. Please allow popups for this site, or try again.";
+    case "auth/popup-closed-by-user":
+      return "Sign-in popup was closed before completing.";
+    case "auth/cancelled-popup-request":
+      return "Only one sign-in attempt can be active at a time.";
     case "auth/invalid-credential":
     case "auth/wrong-password":
       return "Invalid email or password. Please verify your credentials.";
@@ -67,12 +88,6 @@ export function getFirebaseErrorMessage(error: unknown): string {
       return "Password is too weak. Please use at least 6 characters.";
     case "auth/invalid-email":
       return "Please enter a valid email address.";
-    case "auth/popup-closed-by-user":
-      return "Sign-in popup was closed before completing.";
-    case "auth/popup-blocked":
-      return "Sign-in popup was blocked by your browser. Please allow popups.";
-    case "auth/operation-not-allowed":
-      return "This sign-in provider is not enabled in the Firebase Console (Authentication > Sign-in method).";
     case "auth/network-request-failed":
       return "Network connection issue. Please check your internet connection.";
     default:
@@ -84,12 +99,39 @@ export async function loginWithGoogle() {
   if (!auth) {
     throw new Error("Firebase is not yet configured. Please verify your environment variables.");
   }
-  const result = await signInWithPopup(auth, googleProvider);
-  const idToken = await result.user.getIdToken();
-  return {
-    user: result.user,
-    idToken,
-  };
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const idToken = await result.user.getIdToken();
+    return {
+      user: result.user,
+      idToken,
+    };
+  } catch (err: unknown) {
+    const fbErr = err as Partial<FirebaseError>;
+    if (fbErr.code === "auth/popup-blocked") {
+      // Browser blocked popup — fallback to redirect
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
+    throw err;
+  }
+}
+
+export async function checkGoogleRedirectResult() {
+  if (!auth) return null;
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      const idToken = await result.user.getIdToken();
+      return {
+        user: result.user,
+        idToken,
+      };
+    }
+    return null;
+  } catch (err) {
+    throw err;
+  }
 }
 
 export async function loginWithEmailFirebase(email: string, pass: string) {

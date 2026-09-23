@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1069489954140",
+    "project_id": "agencyflow-web",
+    "storage_bucket": "agencyflow-web.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069489954140:android:b3d364b35ad829e035f599",
+        "android_client_info": {
+          "package_name": "www.agencyflow.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0n8t21kCwfgeqfRNsH7UWU0uOejtpPYM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

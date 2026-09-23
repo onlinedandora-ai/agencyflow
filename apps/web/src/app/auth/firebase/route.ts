@@ -61,45 +61,50 @@ export async function POST(request: Request) {
   const email = decodedEmail.toLowerCase().trim();
   const displayName = decodedName?.trim() || email.split("@")[0] || "User";
 
-  // Find or provision user in the database
-  let user = await prisma.user.findUnique({ where: { email } });
+  try {
+    // Find or provision user in the database
+    let user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user) {
-    const userCount = await prisma.user.count();
-    // First user is Admin; subsequent users are Client Managers
-    const initialRole = userCount === 0 ? "ADMIN" : "CLIENT_MANAGER";
-    const dummyHash = await bcrypt.hash(`firebase-${Date.now()}-${Math.random()}`, 10);
+    if (!user) {
+      const userCount = await prisma.user.count();
+      // First user is Admin; subsequent users are Client Managers
+      const initialRole = userCount === 0 ? "ADMIN" : "CLIENT_MANAGER";
+      const dummyHash = await bcrypt.hash(`firebase-${Date.now()}-${Math.random()}`, 10);
 
-    user = await prisma.user.create({
-      data: {
-        email,
-        name: displayName,
-        passwordHash: dummyHash,
-        role: initialRole,
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: displayName,
+          passwordHash: dummyHash,
+          role: initialRole,
+        },
+      });
+    } else if (!user.name && displayName) {
+      // Fill in name if missing
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { name: displayName },
+      });
+    }
+
+    const accessToken = await signAccessToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    });
+
+    return jsonOk({
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
       },
     });
-  } else if (!user.name && displayName) {
-    // Fill in name if missing
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { name: displayName },
-    });
+  } catch (dbErr) {
+    console.error("Firebase auth database provisioning error:", dbErr);
+    return jsonError("Account provisioning failed. Please try again or contact support.", 500);
   }
-
-  const accessToken = await signAccessToken({
-    sub: user.id,
-    email: user.email,
-    role: user.role,
-    name: user.name,
-  });
-
-  return jsonOk({
-    accessToken,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    },
-  });
 }
