@@ -23,7 +23,7 @@ export default function HomePage() {
   }, [token, router]);
 
   return (
-    <div className="mesh-page flex min-h-screen items-center justify-center">
+    <div className="mesh-page flex min-h-screen items-center justify-center" suppressHydrationWarning>
       <script
         dangerouslySetInnerHTML={{
           __html: `

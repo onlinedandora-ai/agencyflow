@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/free-port.js",
-    "dev": "next dev --webpack",
+    "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
     "dev:turbo": "next dev --turbo",
     "prebuild": "prisma generate --schema=../api/prisma/schema.prisma",
     "build": "next build",

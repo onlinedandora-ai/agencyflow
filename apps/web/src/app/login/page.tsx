@@ -27,8 +27,8 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("admin@agencyflow.com");
-  const [password, setPassword] = useState("demo123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [error, setError] = useState("");
@@ -57,7 +57,7 @@ export default function LoginPage() {
     try {
       if (!isFirebaseConfigured) {
         throw new Error(
-          "Firebase is not yet configured. Please ensure NEXT_PUBLIC_FIREBASE_* variables are set in .env.local."
+          "Firebase authentication is not configured. Please check your environment variables."
         );
       }
       const { idToken, user } = await loginWithGoogle();
@@ -99,7 +99,6 @@ export default function LoginPage() {
           return;
         } catch (firebaseErr: unknown) {
           const fbCode = (firebaseErr as { code?: string })?.code;
-          // If user exists in local database (e.g. demo accounts), fallback gracefully to local login
           if (
             fbCode === "auth/user-not-found" ||
             fbCode === "auth/invalid-credential" ||
@@ -112,7 +111,7 @@ export default function LoginPage() {
         }
       }
 
-      // Local / Database authentication (supports demo seed users)
+      // Local / Database authentication fallback
       await warmupApi();
       const result = await api.login(email, password);
       setAuth(result.accessToken, result.user);
@@ -121,9 +120,9 @@ export default function LoginPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign-in failed";
       if (message === "Failed to fetch" || message.includes("NetworkError")) {
-        setError("Cannot reach the server. Check your connection and try again.");
+        setError("Cannot reach the server. Please check your internet connection.");
       } else if (message.toLowerCase().includes("invalid credentials")) {
-        setError("Invalid email or password");
+        setError("Invalid email or password. Please try again.");
       } else {
         setError(getFirebaseErrorMessage(err));
       }
@@ -150,7 +149,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (!isFirebaseConfigured) {
-        throw new Error("Firebase is not yet configured. Please set your Firebase variables in .env.local.");
+        throw new Error("Firebase authentication is not configured. Please check your settings.");
       }
       const { idToken, user } = await registerWithEmailFirebase(email, password, fullName);
       const result = await api.firebaseLogin({
@@ -189,66 +188,115 @@ export default function LoginPage() {
     }
   }
 
-  function setDemoAccount(accountEmail: string) {
-    setEmail(accountEmail);
-    setPassword("demo123");
-    setMode("signin");
-    setError("");
-  }
-
   if (redirecting) {
     return <LoginRedirectSkeleton />;
   }
 
   return (
-    <div className="mesh-page flex min-h-screen">
-      <div className="glass-sidebar hidden w-1/2 p-12 lg:flex lg:flex-col lg:justify-center">
-        <h1 className="text-4xl font-semibold tracking-tight">AgencyFlow</h1>
-        <p className="mt-2 text-sm text-white/60">A product of SreeDrisya Media</p>
-        <p className="mt-4 max-w-md text-lg leading-relaxed text-white/85">
-          Encode your agency SOP as software — from lead capture to delivery, invoicing, and vendor management.
-        </p>
-        <ul className="mt-8 space-y-2 text-sm text-white/75">
-          <li>✓ 30-minute lead response SLA tracking</li>
-          <li>✓ Advance-payment gates before work starts</li>
-          <li>✓ Revision-round enforcement and billing</li>
-          <li>✓ Native Google Cloud &amp; Firebase Ecosystem</li>
-        </ul>
+    <div className="mesh-page flex min-h-screen flex-col lg:flex-row">
+      {/* Left Brand Panel (Desktop) */}
+      <div className="glass-sidebar hidden w-full lg:w-1/2 p-8 lg:p-16 lg:flex lg:flex-col lg:justify-between relative overflow-hidden bg-slate-950/85">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-bold text-xl">
+            A
+          </div>
+          <div>
+            <span className="text-2xl font-bold tracking-tight text-white">AgencyFlow</span>
+            <span className="block text-xs text-slate-400">by SreeDrisya Media</span>
+          </div>
+        </div>
+
+        <div className="my-auto max-w-lg py-12">
+          <h1 className="text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+            Encode your agency SOP as software.
+          </h1>
+          <p className="mt-4 text-base lg:text-lg leading-relaxed text-slate-300">
+            From initial lead capture to client approval, milestone invoicing, and delivery tracking — everything in one seamless flow.
+          </p>
+
+          <div className="mt-10 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-xs mt-0.5">
+                ✓
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">30-minute lead response SLA tracking</p>
+                <p className="text-xs text-slate-400">Never let a high-intent inquiry go cold with automatic alerts.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-400 font-bold text-xs mt-0.5">
+                ✓
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Advance-payment gates before execution</p>
+                <p className="text-xs text-slate-400">Lock work stages until milestone payments and agreements clear.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400 font-bold text-xs mt-0.5">
+                ✓
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Strict revision round enforcement &amp; billing</p>
+                <p className="text-xs text-slate-400">Eliminate scope creep with tracked deliverable revisions.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-slate-500 border-t border-white/10 pt-4">
+          <span>© {new Date().getFullYear()} SreeDrisya Media. All rights reserved.</span>
+          <span>Enterprise Ready</span>
+        </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-6">
-        <Card className="glass-panel-strong w-full max-w-md border-white/60">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+      {/* Right Auth Form Section */}
+      <div className="flex flex-1 flex-col items-center justify-center p-4 sm:p-8 lg:p-12">
+        {/* Mobile Brand Header */}
+        <div className="mb-6 flex flex-col items-center text-center lg:hidden">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-bold text-2xl mb-2">
+            A
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">AgencyFlow</h2>
+          <p className="text-xs text-slate-500">by SreeDrisya Media</p>
+        </div>
+
+        <Card className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-white/90 shadow-2xl backdrop-blur-xl">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-2xl tracking-tight">
+                <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">
                   {mode === "signin"
-                    ? "Sign in"
+                    ? "Sign In"
                     : mode === "signup"
-                    ? "Create account"
-                    : "Reset password"}
+                    ? "Create Account"
+                    : "Reset Password"}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-slate-600 text-xs sm:text-sm mt-0.5">
                   {mode === "signin"
                     ? "Access your AgencyFlow workspace"
                     : mode === "signup"
                     ? "Join AgencyFlow with Google or Email"
-                    : "We'll send a password recovery email"}
+                    : "Enter your email to receive recovery instructions"}
                 </CardDescription>
               </div>
 
               {/* Mode switch pills */}
-              <div className="flex gap-1 rounded-lg bg-white/10 p-1">
+              <div className="flex shrink-0 items-center rounded-xl bg-slate-100 p-1 border border-slate-200">
                 <button
                   type="button"
                   onClick={() => {
                     setMode("signin");
                     setError("");
+                    setInfo("");
                   }}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                     mode === "signin"
-                      ? "bg-white/20 text-white shadow"
-                      : "text-white/60 hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
                   Sign In
@@ -258,11 +306,12 @@ export default function LoginPage() {
                   onClick={() => {
                     setMode("signup");
                     setError("");
+                    setInfo("");
                   }}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                     mode === "signup"
-                      ? "bg-white/20 text-white shadow"
-                      : "text-white/60 hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
                   Register
@@ -273,28 +322,27 @@ export default function LoginPage() {
 
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="border-red-200 bg-red-50 text-red-700">
+                <AlertDescription className="text-xs sm:text-sm">{error}</AlertDescription>
               </Alert>
             )}
 
             {info && (
-              <Alert className="border-emerald-500/50 bg-emerald-500/10 text-emerald-300">
-                <AlertDescription>{info}</AlertDescription>
+              <Alert className="border-emerald-200 bg-emerald-50 text-emerald-800">
+                <AlertDescription className="text-xs sm:text-sm">{info}</AlertDescription>
               </Alert>
             )}
 
-            {/* Google Sign In Button (Available in Sign In and Sign Up) */}
+            {/* High-Contrast Google Sign In Button */}
             {mode !== "reset" && (
-              <>
-                <Button
+              <div className="space-y-4">
+                <button
                   type="button"
-                  variant="outline"
-                  className="w-full flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 text-white border-white/20 py-5 transition-all"
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading || loading || !hasHydrated}
+                  className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60 cursor-pointer"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -312,53 +360,57 @@ export default function LoginPage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                     />
                   </svg>
-                  <span>
+                  <span className="text-slate-800 font-semibold">
                     {googleLoading
                       ? "Connecting to Google…"
                       : mode === "signup"
                       ? "Sign up with Google"
                       : "Sign in with Google"}
                   </span>
-                </Button>
+                </button>
 
-                <div className="relative my-3">
+                <div className="relative flex items-center justify-center">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-white/15" />
+                    <span className="w-full border-t border-slate-200" />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background/80 px-2 text-white/50 backdrop-blur-sm">
-                      Or continue with email
-                    </span>
-                  </div>
+                  <span className="relative bg-white px-3 text-xs font-medium uppercase tracking-wider text-slate-400">
+                    Or continue with email
+                  </span>
                 </div>
-              </>
+              </div>
             )}
 
             {/* SIGN IN FORM */}
             {mode === "signin" && (
               <form onSubmit={handleEmailSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-semibold text-slate-700">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@agency.com"
+                    placeholder="name@agency.com"
                     required
+                    className="h-10 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-600 focus-visible:ring-indigo-600/20 shadow-xs"
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-xs font-semibold text-slate-700">
+                      Password
+                    </Label>
                     <button
                       type="button"
                       onClick={() => {
                         setMode("reset");
                         setError("");
+                        setInfo("");
                       }}
-                      className="text-xs text-white/60 hover:text-white transition-colors"
+                      className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -368,14 +420,15 @@ export default function LoginPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
                     required
+                    className="h-10 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-600 focus-visible:ring-indigo-600/20 shadow-xs"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full"
-                  size="lg"
+                  className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/25 transition-all active:scale-[0.99]"
                   disabled={loading || googleLoading || warming || !hasHydrated}
                 >
                   {warming
@@ -383,47 +436,19 @@ export default function LoginPage() {
                     : loading
                     ? "Signing in…"
                     : hasHydrated
-                    ? "Sign in"
+                    ? "Sign In"
                     : "Loading…"}
                 </Button>
-
-                {/* 1-Click Demo Accounts */}
-                <div className="pt-2 border-t border-white/10 text-center">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    1-Click Demo Accounts (Password: demo123):
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setDemoAccount("admin@agencyflow.com")}
-                      className="px-2 py-1 text-xs rounded bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
-                    >
-                      Admin
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDemoAccount("manager@agencyflow.com")}
-                      className="px-2 py-1 text-xs rounded bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
-                    >
-                      Manager
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDemoAccount("exec@agencyflow.com")}
-                      className="px-2 py-1 text-xs rounded bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
-                    >
-                      Delivery Exec
-                    </button>
-                  </div>
-                </div>
               </form>
             )}
 
             {/* SIGN UP FORM */}
             {mode === "signup" && (
               <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullName" className="text-xs font-semibold text-slate-700">
+                    Full Name
+                  </Label>
                   <Input
                     id="fullName"
                     type="text"
@@ -431,47 +456,58 @@ export default function LoginPage() {
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Jane Doe"
                     required
+                    className="h-10 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-600 focus-visible:ring-indigo-600/20 shadow-xs"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="signup-email" className="text-xs font-semibold text-slate-700">
+                    Email
+                  </Label>
                   <Input
                     id="signup-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@agency.com"
+                    placeholder="name@agency.com"
                     required
+                    className="h-10 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-600 focus-visible:ring-indigo-600/20 shadow-xs"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password (min 6 chars)</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="signup-password" className="text-xs font-semibold text-slate-700">
+                    Password (min 6 characters)
+                  </Label>
                   <Input
                     id="signup-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a strong password"
                     required
+                    className="h-10 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-600 focus-visible:ring-indigo-600/20 shadow-xs"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirm-password" className="text-xs font-semibold text-slate-700">
+                    Confirm Password
+                  </Label>
                   <Input
                     id="confirm-password"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
                     required
+                    className="h-10 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-600 focus-visible:ring-indigo-600/20 shadow-xs"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full"
-                  size="lg"
+                  className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/25 transition-all active:scale-[0.99]"
                   disabled={loading || googleLoading || warming || !hasHydrated}
                 >
                   {loading ? "Creating Account…" : "Create Account & Sign In"}
@@ -482,25 +518,27 @@ export default function LoginPage() {
             {/* PASSWORD RESET FORM */}
             {mode === "reset" && (
               <form onSubmit={handlePasswordReset} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email">Your Account Email</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reset-email" className="text-xs font-semibold text-slate-700">
+                    Account Email
+                  </Label>
                   <Input
                     id="reset-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@agency.com"
+                    placeholder="name@agency.com"
                     required
+                    className="h-10 rounded-xl border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-600 focus-visible:ring-indigo-600/20 shadow-xs"
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full"
-                  size="lg"
+                  className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/25 transition-all active:scale-[0.99]"
                   disabled={loading || googleLoading || !hasHydrated}
                 >
-                  {loading ? "Sending link…" : "Send Reset Email"}
+                  {loading ? "Sending Link…" : "Send Reset Link"}
                 </Button>
 
                 <div className="text-center pt-2">
@@ -509,8 +547,9 @@ export default function LoginPage() {
                     onClick={() => {
                       setMode("signin");
                       setError("");
+                      setInfo("");
                     }}
-                    className="text-xs text-white/60 hover:text-white transition-colors"
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
                   >
                     ← Back to Sign In
                   </button>

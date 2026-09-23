@@ -144,7 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="mesh-page flex min-h-screen">
+    <div className="mesh-page flex min-h-screen" suppressHydrationWarning>
       <aside className="glass-sidebar no-print hidden w-64 shrink-0 flex-col lg:flex">
         <SidebarBrand />
         <SidebarNav
@@ -167,7 +167,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1" suppressHydrationWarning>
             <p className="truncate text-xs text-muted-foreground sm:text-sm">Signed in as</p>
             <p className="truncate font-medium tracking-tight">{user?.name}</p>
             {user?.role && (
