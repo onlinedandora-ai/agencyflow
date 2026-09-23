@@ -2,7 +2,7 @@ export { cn } from "./utils";
 
 import { REQUEST_TIMEOUT_MS } from "./query-config";
 
-/** Same-origin when unset or blank — Next Route Handlers on Vercel. */
+/** Same-origin when unset or blank — Next Route Handlers. */
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/$/, "");
 
 function isRetryableApiError(err: Error): boolean {

@@ -263,7 +263,7 @@ Full agency-wide control. Owns systems, access, infrastructure, vendor onboardin
 ### 7.4 Infrastructure / DevOps
 | Purpose | Tool |
 |---|---|
-| Hosting (frontend) | Vercel |
+| Hosting (frontend) | Firebase App Hosting / Cloud Run |
 | Hosting (backend) | AWS (ECS/Fargate) or Railway/Render for early stage |
 | CI/CD | GitHub Actions |
 | Containerization | Docker |

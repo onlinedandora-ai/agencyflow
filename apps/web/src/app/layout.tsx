@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+  preload: true,
+  fallback: ["system-ui", "-apple-system", "sans-serif"],
 });
 
 export const metadata: Metadata = {
@@ -28,6 +31,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("h-full", inter.variable)}>
+      <head>
+        <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
+        <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
+        <link rel="preconnect" href="https://securetoken.googleapis.com" />
+        <link rel="dns-prefetch" href="https://securetoken.googleapis.com" />
+      </head>
       <body className="min-h-full">
         <Providers>{children}</Providers>
       </body>

@@ -35,12 +35,18 @@ export default function LoginPage() {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [warming, setWarming] = useState(true);
+  const [warming, setWarming] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
+  const token = useAuthStore((s) => s.token);
+
   useEffect(() => {
-    warmupApi().finally(() => setWarming(false));
-  }, []);
+    warmupApi();
+    router.prefetch("/pipeline");
+    if (token) {
+      router.replace("/pipeline");
+    }
+  }, [token, router]);
 
   async function handleGoogleSignIn() {
     if (!hasHydrated) return;

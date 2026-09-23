@@ -1,51 +1,55 @@
 # Zero-Render migration — COMPLETE
 
-**Stack:** Next.js (Vercel) + Supabase Postgres only.  
+**Stack:** Next.js (Firebase App Hosting / Cloud Run) + Supabase / Cloud SQL Postgres.  
 **Render / Nest API:** no longer required at runtime.
 
 ## Architecture
 
 ```
-Browser → Vercel (Next.js pages + Route Handlers)
-                ↓ Prisma
-           Supabase Postgres
+Browser → Firebase App Hosting (Next.js pages + Route Handlers)
+                 ↓ Prisma
+           Postgres (Supabase / Cloud SQL)
 ```
 
 | Concern | Implementation |
 |---------|----------------|
 | API | ~75 Route Handlers under `apps/web/src/app/**/route.ts` |
-| Auth | JWT + bcrypt (`apps/web/src/lib/server/auth.ts`) |
-| DB | Prisma schema still in `apps/api/prisma` (shared generate) |
-| Automations | Vercel Cron → `/api/cron/automations` |
-| Payments | Razorpay via `RAZORPAY_*` env on Vercel |
+| Auth | Firebase Auth + JWT + bcrypt (`apps/web/src/lib/server/auth.ts`) |
+| DB | Prisma schema in `apps/api/prisma` (shared generate) |
+| Automations | Cloud Scheduler / Firebase Cron → `/api/cron/automations` |
+| Payments | Razorpay via `RAZORPAY_*` env |
 
 ## Local
 
 ```bash
 # From repo root
-cp apps/api/.env values into apps/web/.env.local  # DATABASE_URL, DIRECT_URL, JWT_SECRET, RAZORPAY_*
+# Configure DATABASE_URL, DIRECT_URL, JWT_SECRET, RAZORPAY_*, NEXT_PUBLIC_FIREBASE_* in apps/web/.env.local
 npm run db:generate
 npm run dev   # web only — no Nest
 ```
 
 Open http://localhost:3000
 
-## Vercel env
+## Production env
 
 | Variable | Required |
 |----------|----------|
 | `DATABASE_URL` | Yes |
 | `DIRECT_URL` | Yes |
 | `JWT_SECRET` | Yes |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Yes |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | For payments |
 | `CRON_SECRET` | For cron auth |
 | `NEXT_PUBLIC_API_URL` | Leave **unset** (same-origin) |
 
-**Remove:** any `NEXT_PUBLIC_API_URL=…onrender.com`, `NEST_API_PROXY_URL`, Render service.
-
 ## UI path notes (API vs pages)
 
-Some Nest API paths collided with Next pages. UI moved; API kept Nest paths:
+Some legacy Nest API paths collided with Next pages. UI moved; API kept clean paths:
 
 | API (unchanged) | UI page |
 |-----------------|---------|
@@ -59,14 +63,8 @@ Some Nest API paths collided with Next pages. UI moved; API kept Nest paths:
 ## Teardown checklist
 
 - [x] Port all Nest modules to Route Handlers
-- [x] Vercel Cron for automations
-- [x] Remove Nest proxy rewrite from `next.config.ts`
+- [x] Cloud Scheduler / Firebase Cron for automations
+- [x] Remove legacy proxy rewrites from `next.config.ts`
 - [x] Root `npm run dev` / `build` = web only
-- [ ] Set Vercel env vars listed above
-- [ ] Deploy & smoke-test production
-- [ ] Delete Render service `agencyflow-api`
-- [ ] Optional later: delete or archive `apps/api` Nest app (keep `prisma/` + seed)
-
-## Legacy
-
-`apps/api` Nest codebase remains for Prisma migrations/seed (`npm run db:migrate`, `db:seed`) until those scripts are moved into `apps/web`. It is **not** needed to run the product.
+- [x] Set Firebase and database env vars
+- [x] Deploy & smoke-test production

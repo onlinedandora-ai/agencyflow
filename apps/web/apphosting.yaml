@@ -21,3 +21,9 @@ env:
     value: "335519498043"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: "1:335519498043:web:b20d19a59ac87d7fa4811e"
+  - variable: DATABASE_URL
+    value: postgresql://postgres.nwxshrpsunitweeoiuvy:7e%2AQm%3FZnus4ThYj@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+  - variable: DIRECT_URL
+    value: postgresql://postgres.nwxshrpsunitweeoiuvy:7e%2AQm%3FZnus4ThYj@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+  - variable: JWT_SECRET
+    value: agencyflow-dev-secret-change-in-production

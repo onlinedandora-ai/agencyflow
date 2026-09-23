@@ -101,7 +101,7 @@ npm run db:seed
 
 | Component | Previous Solution | Google / Firebase Solution | Status |
 |---|---|---|---|
-| **Hosting & API** | Vercel / Render | **Firebase App Hosting (Cloud Run)** | Ready (`apphosting.yaml`) |
+| **Hosting & API** | Legacy Nest / Node | **Firebase App Hosting (Cloud Run)** | Ready (`apphosting.yaml`) |
 | **Authentication** | Custom bcrypt + Supabase | **Firebase Auth (Google + Email/Password)** | Active & Configured |
-| **Database** | Supabase Postgres (AWS) | **Google Cloud SQL for PostgreSQL** | Migration scripts & config ready |
-| **Storage (Assets)** | Local / S3 | **Firebase Storage** (`quickfresh-10mins.firebasestorage.app`) | Configured |
+| **Database** | Supabase Postgres | **Google Cloud SQL for PostgreSQL** | Migration scripts & config ready |
+| **Storage (Assets)** | Local / S3 | **Firebase Storage** (`ajencyflow.firebasestorage.app`) | Configured |

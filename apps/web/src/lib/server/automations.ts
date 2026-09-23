@@ -269,7 +269,7 @@ export function getAutomationStatus() {
   };
 }
 
-/** Cron route auth — Bearer CRON_SECRET, CRON_SECRET header, or Vercel cron marker. */
+/** Cron route auth — Bearer CRON_SECRET or CRON_SECRET header. */
 export function verifyCronAuth(request: Request): NextResponse | null {
   const secret = process.env.CRON_SECRET?.trim();
 
@@ -282,10 +282,6 @@ export function verifyCronAuth(request: Request): NextResponse | null {
     if (bearer === secret || cronHeader === secret) {
       return null;
     }
-  }
-
-  if (request.headers.get("x-vercel-cron")) {
-    return null;
   }
 
   if (!secret && process.env.NODE_ENV !== "production") {

@@ -8,17 +8,17 @@ See [prd.md](./prd.md) for the full product requirements document.
 
 | Layer | Tech |
 |-------|------|
-| App (UI + API) | Next.js 16 Route Handlers on **Vercel** |
-| Database | **Supabase** Postgres via Prisma |
-| Auth | JWT + bcrypt (Next server) |
-| Automations | Vercel Cron |
+| App (UI + API) | Next.js 16 Route Handlers on **Firebase App Hosting / Cloud Run** |
+| Database | **Supabase / Google Cloud SQL** Postgres via Prisma |
+| Auth | Firebase Auth + JWT + bcrypt (Next server) |
+| Automations | Cloud Scheduler / Firebase Cron |
 | Payments | Razorpay (optional) |
 
 > NestJS on Render has been retired. See [MIGRATION.md](./MIGRATION.md) and [DEPLOY.md](./DEPLOY.md).
 
 ## Quick start
 
-1. Create `apps/web/.env.local` (copy from `apps/web/.env.example`) with Supabase URLs + `JWT_SECRET`.
+1. Create `apps/web/.env.local` (copy from `apps/web/.env.example`) with Supabase/Cloud SQL URLs, `JWT_SECRET`, and Firebase keys.
 
 2. Generate Prisma client and seed (schema lives under `apps/api/prisma`):
 
@@ -33,8 +33,7 @@ npm run db:seed
 npm run dev
 ```
 
-Open http://localhost:3000 — demo: `admin@agencyflow.com` / `demo123`  
-Supabase: https://supabase.com/dashboard/project/nwxshrpsunitweeoiuvy
+Open http://localhost:3000 — demo: `admin@agencyflow.com` / `demo123` or Sign in with Google.
 
 ### Optional — local Docker Postgres
 
@@ -56,9 +55,9 @@ npm run dev
 
 ## Deploy to production
 
-Push to `main` → Vercel auto-deploys `apps/web`.
+Push to `main` → Firebase auto-deploys `apps/web`.
 
-**Vercel env:** `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, optional `RAZORPAY_*`, `CRON_SECRET`.  
+**Firebase env:** `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `NEXT_PUBLIC_FIREBASE_*`, optional `RAZORPAY_*`, `CRON_SECRET`.  
 Leave `NEXT_PUBLIC_API_URL` unset (same-origin API).
 
 Full checklist: [DEPLOY.md](./DEPLOY.md).
@@ -69,7 +68,7 @@ Full checklist: [DEPLOY.md](./DEPLOY.md).
 agencyflow/
 ├── apps/
 │   ├── web/          # Next.js UI + API (Route Handlers)
-│   └── api/          # Legacy Nest (Prisma schema + seed only)
+│   └── api/          # Prisma schema + seed definitions
 ├── MIGRATION.md
 ├── DEPLOY.md
 ├── prototype/

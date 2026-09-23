@@ -1,39 +1,42 @@
 # Production deploy checklist
 
-> **Current stack:** Vercel (Next.js UI + API) + Supabase (Postgres).  
+> **Current stack:** Firebase App Hosting / Cloud Run (Next.js UI + API) + Supabase / Cloud SQL (Postgres).  
 > **Render Nest API is retired** — see [MIGRATION.md](./MIGRATION.md).
 
 ## Production setup
 
 | Service | Project | URL | Deploy |
 |---------|---------|-----|--------|
-| **App (UI + API)** | Vercel `agencyflow-api` | https://agencyflow-api.vercel.app | Git push → `main` |
-| **DB** | Supabase | Singapore pooler | `npm run db:migrate` / seed |
+| **App (UI + API)** | Firebase `ajencyflow` | https://ajencyflow.web.app | `npm run deploy` / GitHub Action |
+| **DB** | Supabase / Cloud SQL | Singapore pooler | `npm run db:migrate` / seed |
 
-**Vercel**
+**Firebase App Hosting**
 
-- Repo: `vaitahavya/agencyflow`
+- Project: `ajencyflow`
 - Root directory: `apps/web`
 - Branch: `main`
 
 ## Standard workflow
 
 ```bash
-git config --local user.name "vaitahavya"
-git config --local user.email "194759526+vaitahavya@users.noreply.github.com"
-
 git add -A && git commit -m "Your message"
 git push origin main
 ```
 
-Vercel rebuilds the full app (pages + Route Handlers + crons).
+Firebase automatically builds and serves the full app (pages + Route Handlers + crons).
 
-## Required Vercel environment variables
+## Required environment variables
 
 ```
 DATABASE_URL=<Supabase pooler URL — no quotes>
 DIRECT_URL=<Supabase session/direct URL — no quotes>
 JWT_SECRET=<long random string>
+NEXT_PUBLIC_FIREBASE_API_KEY=<Firebase Web API Key>
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=ajencyflow.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=ajencyflow
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=ajencyflow.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=335519498043
+NEXT_PUBLIC_FIREBASE_APP_ID=1:335519498043:web:b20d19a59ac87d7fa4811e
 RAZORPAY_KEY_ID=<optional>
 RAZORPAY_KEY_SECRET=<optional>
 CRON_SECRET=<random string for cron auth>
@@ -41,19 +44,17 @@ CRON_SECRET=<random string for cron auth>
 
 Leave `NEXT_PUBLIC_API_URL` **unset** so the browser uses same-origin `/…` API routes.
 
-Do **not** set `NEST_API_PROXY_URL` or point at Render.
-
 ## Local
 
 ```bash
-# apps/web/.env.local — copy DB + JWT from former apps/api/.env
+# apps/web/.env.local
 npm run db:generate
 npm run dev
 ```
 
 ## DB migrations / seed
 
-Prisma schema still lives under `apps/api/prisma`:
+Prisma schema lives under `apps/api/prisma`:
 
 ```bash
 npm run db:migrate
@@ -62,14 +63,8 @@ npm run db:seed
 
 ## Verify
 
-- [ ] `GET https://agencyflow-api.vercel.app/health` → `{"status":"ok","runtime":"next",…}`
-- [ ] Login with `admin@agencyflow.com` / `demo123`
+- [ ] `GET https://ajencyflow.web.app/health` → `{"status":"ok","runtime":"next",…}`
+- [ ] Login with Google or `admin@agencyflow.com` / `demo123`
 - [ ] Pipeline loads; archive works
 - [ ] Project board loads
 - [ ] (Optional) Razorpay portal payment with live keys
-
-## Retire Render
-
-1. Confirm production healthy on Vercel alone  
-2. Render dashboard → delete/suspend `agencyflow-api`  
-3. Remove any leftover DNS/env pointing at `*.onrender.com`

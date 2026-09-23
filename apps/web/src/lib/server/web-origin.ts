@@ -1,19 +1,16 @@
 /**
  * Public site origin for client-facing links (proposals, portal, docs).
- * Prefer explicit WEB_ORIGIN; on Vercel fall back to production/deploy URLs.
+ * Prefer explicit WEB_ORIGIN or standard app URLs; fallback to localhost.
  */
 export function getWebOrigin(): string {
   const explicit = process.env.WEB_ORIGIN?.trim().replace(/\/$/, "");
   if (explicit) return explicit;
 
-  const production = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim().replace(
-    /^https?:\/\//,
-    "",
-  );
-  if (production) return `https://${production}`;
+  const publicAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  if (publicAppUrl) return publicAppUrl;
 
-  const deploy = process.env.VERCEL_URL?.trim().replace(/^https?:\/\//, "");
-  if (deploy) return `https://${deploy}`;
+  const appUrl = (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL)?.trim().replace(/\/$/, "");
+  if (appUrl) return appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
 
   return "http://localhost:3000";
 }

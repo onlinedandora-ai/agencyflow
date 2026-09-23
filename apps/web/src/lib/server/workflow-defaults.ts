@@ -27,7 +27,7 @@ export const AUTOMATION_JOB_TYPES: AutomationJobType[] = [
   "deliverable_review_nudge",
 ];
 
-/** Nest BullMQ / in-process cron schedules — mirrored in vercel.json crons. */
+/** In-process / Nest BullMQ cron schedules. */
 export const AUTOMATION_CRON_SCHEDULES: Array<{
   job: AutomationJobType;
   schedule: string;

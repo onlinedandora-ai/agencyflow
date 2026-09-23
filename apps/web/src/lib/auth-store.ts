@@ -14,19 +14,38 @@ type AuthState = {
 
 const AUTH_STORE_KEY = "__agencyflow_auth_store__";
 
+function getInitialAuth(): { token: string | null; user: User | null; hasHydrated: boolean } {
+  if (typeof window === "undefined") {
+    return { token: null, user: null, hasHydrated: false };
+  }
+  try {
+    const raw = localStorage.getItem("agencyflow-auth");
+    if (!raw) return { token: null, user: null, hasHydrated: true };
+    const parsed = JSON.parse(raw);
+    return {
+      token: parsed?.state?.token ?? null,
+      user: parsed?.state?.user ?? null,
+      hasHydrated: true,
+    };
+  } catch {
+    return { token: null, user: null, hasHydrated: true };
+  }
+}
+
 function initAuthStore() {
+  const initial = getInitialAuth();
+
   return create<AuthState>()(
     persist(
       (set) => ({
-        token: null,
-        user: null,
-        _hasHydrated: false,
-        setAuth: (token, user) => set({ token, user }),
+        token: initial.token,
+        user: initial.user,
+        _hasHydrated: initial.hasHydrated,
+        setAuth: (token, user) => set({ token, user, _hasHydrated: true }),
         clearAuth: () => set({ token: null, user: null }),
       }),
       {
         name: "agencyflow-auth",
-        skipHydration: true,
         partialize: (state) => ({ token: state.token, user: state.user }),
         merge: (persistedState, currentState) => {
           const persisted = persistedState as Partial<Pick<AuthState, "token" | "user">> | undefined;
@@ -34,10 +53,13 @@ function initAuthStore() {
             ...currentState,
             token: currentState.token ?? persisted?.token ?? null,
             user: currentState.user ?? persisted?.user ?? null,
+            _hasHydrated: true,
           };
         },
         onRehydrateStorage: () => () => {
-          getAuthStore().setState({ _hasHydrated: true });
+          if (globalWithStore[AUTH_STORE_KEY]) {
+            globalWithStore[AUTH_STORE_KEY].setState({ _hasHydrated: true });
+          }
         },
       },
     ),
