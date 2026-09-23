@@ -139,9 +139,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
   );
 
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setMobileNavOpen(false);
-  }, [pathname]);
+  }
 
   return (
     <div className="mesh-page flex min-h-screen" suppressHydrationWarning>

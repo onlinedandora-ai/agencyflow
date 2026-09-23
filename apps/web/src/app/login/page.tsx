@@ -24,6 +24,13 @@ export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isHydrated = mounted && hasHydrated;
 
   const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
   const [fullName, setFullName] = useState("");
@@ -49,7 +56,7 @@ export default function LoginPage() {
   }, [token, router]);
 
   async function handleGoogleSignIn() {
-    if (!hasHydrated) return;
+    if (!isHydrated) return;
     setError("");
     setInfo("");
     setGoogleLoading(true);
@@ -339,7 +346,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  disabled={googleLoading || loading || !hasHydrated}
+                  disabled={googleLoading || loading || !isHydrated}
                   className="w-full flex items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60 cursor-pointer"
                 >
                   <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
@@ -429,13 +436,13 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/25 transition-all active:scale-[0.99]"
-                  disabled={loading || googleLoading || warming || !hasHydrated}
+                  disabled={loading || googleLoading || warming || !isHydrated}
                 >
                   {warming
                     ? "Connecting…"
                     : loading
                     ? "Signing in…"
-                    : hasHydrated
+                    : isHydrated
                     ? "Sign In"
                     : "Loading…"}
                 </Button>
@@ -508,7 +515,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/25 transition-all active:scale-[0.99]"
-                  disabled={loading || googleLoading || warming || !hasHydrated}
+                  disabled={loading || googleLoading || warming || !isHydrated}
                 >
                   {loading ? "Creating Account…" : "Create Account & Sign In"}
                 </Button>
@@ -536,7 +543,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-600/25 transition-all active:scale-[0.99]"
-                  disabled={loading || googleLoading || !hasHydrated}
+                  disabled={loading || googleLoading || !isHydrated}
                 >
                   {loading ? "Sending Link…" : "Send Reset Link"}
                 </Button>

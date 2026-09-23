@@ -13,26 +13,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const token = useAuthStore((s) => s.token);
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const [mounted, setMounted] = useState(false);
   const [slowHydration, setSlowHydration] = useState(false);
 
   useEffect(() => {
-    if (!hasHydrated) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !hasHydrated) return;
     warmupApi();
     if (!token) {
       router.replace("/login");
     }
-  }, [hasHydrated, token, router]);
+  }, [mounted, hasHydrated, token, router]);
 
   useEffect(() => {
+    if (!mounted) return;
     if (hasHydrated) {
       setSlowHydration(false);
       return;
     }
     const timer = window.setTimeout(() => setSlowHydration(true), SLOW_QUERY_MS);
     return () => window.clearTimeout(timer);
-  }, [hasHydrated]);
+  }, [mounted, hasHydrated]);
 
-  if (!hasHydrated || !token) {
+  if (!mounted || !hasHydrated || !token) {
     return (
       <div className="relative">
         <AppLayoutSkeleton />
