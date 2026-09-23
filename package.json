@@ -20,6 +20,10 @@
     "prototype": "npx --yes http-server prototype -p 8000 -c-1",
     "deploy": "firebase deploy --only hosting"
   },
+  "dependencies": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
   "devDependencies": {
     "concurrently": "^9.2.0"
   }
