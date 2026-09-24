@@ -49,13 +49,13 @@ export function ProposalDocument({
       <div className="h-1.5 bg-gradient-to-r from-[var(--color-primary)] via-[var(--color-accent)] to-[var(--color-primary)]" />
 
       {/* Header — agency + meta */}
-      <header className="border-b border-[var(--color-border)] px-10 pb-8 pt-10">
-        <div className="flex items-start justify-between gap-8">
+      <header className="border-b border-[var(--color-border)] px-4 sm:px-10 pb-6 sm:pb-8 pt-6 sm:pt-10">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-8">
           <div>
             <p className="text-2xl font-semibold tracking-tight">{agency.name}</p>
             <p className="mt-1 text-sm text-muted-foreground">{agency.tagline}</p>
           </div>
-          <div className="text-right text-sm">
+          <div className="text-left sm:text-right text-sm">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Proposal
             </p>
@@ -141,7 +141,7 @@ export function ProposalDocument({
       </header>
 
       {/* Proposal body */}
-      <div className="px-10 py-10">
+      <div className="px-4 py-6 sm:px-10 sm:py-10">
         {SECTIONS.map((section, index) => {
           const value = proposal[section.key as keyof Proposal] as string | null | undefined;
           if (!value?.trim()) return null;
@@ -160,7 +160,7 @@ export function ProposalDocument({
                   <p className="text-sm text-muted-foreground">{section.subtitle}</p>
                 </div>
               </div>
-              <div className="proposal-section-body mt-5 whitespace-pre-wrap pl-9 text-[15px] leading-8 text-[var(--color-ink)]">
+              <div className="proposal-section-body mt-5 whitespace-pre-wrap pl-4 sm:pl-9 text-[15px] leading-8 text-[var(--color-ink)]">
                 {section.key === "deliverables" ? (
                   <ul className="space-y-2">
                     {value.split("\n").filter(Boolean).map((line, i) => (
@@ -224,7 +224,7 @@ export function ProposalDocument({
       </div>
 
       {/* Acceptance footer */}
-      <footer className="border-t border-[var(--color-border)] bg-[var(--color-bg)] px-10 py-10">
+      <footer className="border-t border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-6 sm:px-10 sm:py-10">
         {isAccepted ? (
           <div className="rounded-xl border border-green-200 bg-green-50 p-6">
             <p className="flex items-center gap-2 font-semibold text-green-600">

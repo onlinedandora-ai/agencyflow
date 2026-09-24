@@ -255,10 +255,10 @@ export default function LoginPage() {
       <div className="glass-sidebar hidden w-full lg:w-1/2 p-8 lg:p-16 lg:flex lg:flex-col lg:justify-between relative overflow-hidden bg-slate-950/85">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-bold text-xl">
-            A
+            D
           </div>
           <div>
-            <span className="text-2xl font-bold tracking-tight text-white">AgencyFlow</span>
+            <span className="text-2xl font-bold tracking-tight text-white">Dandora.online</span>
             <span className="block text-xs text-slate-400">by SreeDrisya Media</span>
           </div>
         </div>
@@ -315,9 +315,9 @@ export default function LoginPage() {
         {/* Mobile Brand Header */}
         <div className="mb-6 flex flex-col items-center text-center lg:hidden">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 font-bold text-2xl mb-2">
-            A
+            D
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">AgencyFlow</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dandora.online</h2>
           <p className="text-xs text-slate-500">by SreeDrisya Media</p>
         </div>
 
@@ -334,9 +334,9 @@ export default function LoginPage() {
                 </CardTitle>
                 <CardDescription className="text-slate-600 text-xs sm:text-sm mt-0.5">
                   {mode === "signin"
-                    ? "Access your AgencyFlow workspace"
+                    ? "Access your Dandora.online workspace"
                     : mode === "signup"
-                    ? "Join AgencyFlow with Google or Email"
+                    ? "Join Dandora.online with Google or Email"
                     : "Enter your email to receive recovery instructions"}
                 </CardDescription>
               </div>

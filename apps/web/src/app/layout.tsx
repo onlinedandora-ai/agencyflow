@@ -14,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AgencyFlow",
+  title: "Dandora.online",
   description: "End-to-end agency operations platform by SreeDrisya Media",
 };
 

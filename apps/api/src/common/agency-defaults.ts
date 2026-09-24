@@ -14,7 +14,7 @@ export const DEFAULT_AGENCY_TERMS = `1. Scope: Work begins only after written ac
 
 export const DEFAULT_AGENCY_PROFILE = {
   name: 'SreeDrisya Media',
-  tagline: 'AgencyFlow — Where Strategy Meets Storytelling',
+  tagline: 'Dandora.online — Where Strategy Meets Storytelling',
   address: 'Hyderabad, Telangana, India',
   city: 'Hyderabad',
   email: 'vaitahavya@sreedrisyamedia.com',

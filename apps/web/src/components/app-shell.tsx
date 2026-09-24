@@ -38,8 +38,8 @@ const salesNavItems = [
 function SidebarBrand() {
   return (
     <div className="border-b border-white/10 px-5 py-4 lg:px-6 lg:py-5">
-      <div className="text-lg font-semibold tracking-tight">AgencyFlow</div>
-      <p className="mt-1 text-xs text-white/55">by SreeDrisya Media</p>
+      <div className="text-lg font-semibold tracking-tight text-white">Dandora.online</div>
+      <p className="mt-1 text-xs text-slate-300">by SreeDrisya Media</p>
     </div>
   );
 }
@@ -66,7 +66,7 @@ function SidebarNav({
           onClick={() => setSalesOpen((v) => !v)}
           className={cn(
             "h-auto w-full justify-between px-3 py-2 text-sm text-white hover:bg-white/10 hover:text-white",
-            salesActive && "bg-white/12 text-white",
+            salesActive && "bg-white/15 text-white font-medium",
           )}
         >
           <span className="flex items-center gap-3">
@@ -87,7 +87,7 @@ function SidebarNav({
                   onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
-                    active ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/8",
+                    active ? "bg-white/15 text-white font-medium shadow-xs" : "text-slate-300 hover:bg-white/10 hover:text-white",
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -109,7 +109,7 @@ function SidebarNav({
             onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
-              active ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/8",
+              active ? "bg-white/15 text-white font-medium shadow-xs" : "text-slate-300 hover:bg-white/10 hover:text-white",
             )}
           >
             <Icon className="h-4 w-4" />
@@ -192,7 +192,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SheetContent
           side="left"
           showCloseButton
-          className="glass-sidebar w-[min(18rem,88vw)] gap-0 border-r border-white/10 p-0 text-white sm:max-w-xs [&_[data-slot=sheet-close]]:text-white [&_[data-slot=sheet-close]]:hover:bg-white/10"
+          className="glass-sidebar !bg-slate-950/95 !text-white w-[min(18rem,88vw)] gap-0 border-r border-white/10 p-0 sm:max-w-xs [&_[data-slot=sheet-close]]:!text-white [&_[data-slot=sheet-close]]:hover:!bg-white/15"
         >
           <SidebarBrand />
           <SidebarNav
